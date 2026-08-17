@@ -14,6 +14,20 @@ that formalizes the **9 / 20 / 200 EMA reversal** strategy: buy a stock while it
 
 ---
 
+## Desktop app (standalone — no Python)
+
+The Bloomberg-style desktop app in `desktop/` is a **native Rust + Tauri** build: the whole
+EMA engine (indicators, scan, backtest) and Yahoo data fetch are compiled into a single
+binary — **no Python, venv, or repo needed at runtime.** The Rust engine is a faithful port
+of the Python tool below, verified bar-for-bar by the parity suite in `tests/parity/`
+(indicators, scan verdict/levels/reasons, and backtest all match the Python reference).
+
+- **Download:** the Releases page (`StockScanner.dmg`), built by `.github/workflows/build-desktop.yml`.
+- **Build locally:** `cd desktop && cargo tauri build` → `desktop/src-tauri/target/release/bundle/`.
+- The Python CLI below remains the reference implementation and the parity oracle.
+
+---
+
 ## What it does
 
 Give it a ticker; it returns:

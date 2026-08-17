@@ -1,0 +1,67 @@
+name: Build Desktop App (Tauri, standalone)
+
+# Builds the native Rust + Tauri desktop app (no Python at runtime) on a macOS runner and
+# attaches the .dmg to the release. This is the real standalone app — the engine is compiled
+# in, so users need nothing installed.
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ "v*" ]
+    paths:
+      - "desktop/**"
+      - ".github/workflows/build-desktop.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write   # for the tag Release upload
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            desktop/src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('desktop/src-tauri/Cargo.lock') }}
+
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli --version "^2" --locked
+
+      - name: Build .dmg + .app
+        working-directory: desktop
+        run: cargo tauri build --bundles dmg,app
+
+      - name: Locate artifacts
+        id: art
+        working-directory: desktop/src-tauri/target/release/bundle
+        run: |
+          DMG=$(ls dmg/*.dmg | head -1)
+          echo "dmg=desktop/src-tauri/target/release/bundle/$DMG" >> "$GITHUB_OUTPUT"
+          echo "Built: $DMG"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: StockScanner-desktop-dmg
+          path: desktop/src-tauri/target/release/bundle/dmg/*.dmg
+          if-no-files-found: error
+
+      - name: Attach to Release (tags only)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: desktop/src-tauri/target/release/bundle/dmg/*.dmg
