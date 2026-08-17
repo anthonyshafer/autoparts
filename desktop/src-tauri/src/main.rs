@@ -7,6 +7,8 @@
 //
 // mac-only POC: assumes `python3` (or a venv) with the deps is available on PATH.
 
+mod engine;
+
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -177,7 +179,36 @@ fn choose_folder() -> Result<String, String> {
     }
 }
 
+// Parity harness: `stockscanner --parity <ohlcv.csv>` reads an OHLCV CSV (header:
+// Open,High,Low,Close,Volume) and prints the LAST row's indicators as JSON, so it can be
+// diffed against the Python reference (tools/strategy.compute_indicators).
+fn run_parity(csv_path: &str) {
+    let text = std::fs::read_to_string(csv_path).expect("read csv");
+    let mut d = engine::Ohlcv { open: vec![], high: vec![], low: vec![], close: vec![], volume: vec![] };
+    for (i, line) in text.lines().enumerate() {
+        if i == 0 && line.to_lowercase().contains("close") { continue; } // header
+        let f: Vec<f64> = line.split(',').map(|s| s.trim().parse::<f64>().unwrap_or(f64::NAN)).collect();
+        if f.len() < 5 { continue; }
+        d.open.push(f[0]); d.high.push(f[1]); d.low.push(f[2]); d.close.push(f[3]); d.volume.push(f[4]);
+    }
+    let ind = engine::compute_indicators(&d);
+    // Emit EVERY bar as CSV so the harness can diff per-bar (not just the last row).
+    let g = |x: f64| if x.is_finite() { format!("{:.6}", x) } else { String::new() };
+    println!("idx,close,ema9,ema20,ema200,rsi,atr,vol_sma20,obv,obv_sma10,ema200_20ago");
+    for i in 0..d.len() {
+        println!("{},{:.6},{},{},{},{},{},{},{},{},{}",
+            i, d.close[i], g(ind.ema9[i]), g(ind.ema20[i]), g(ind.ema200[i]), g(ind.rsi[i]),
+            g(ind.atr[i]), g(ind.vol_sma20[i]), g(ind.obv[i]), g(ind.obv_sma10[i]), g(ind.ema200_20ago[i]));
+    }
+}
+
 fn main() {
+    let args: Vec<String> = std::env::args().collect();
+    if let Some(pos) = args.iter().position(|a| a == "--parity") {
+        let csv = args.get(pos + 1).expect("--parity needs a csv path");
+        run_parity(csv);
+        return;
+    }
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![scan, backtest, save_text, open_url, choose_folder])
         .run(tauri::generate_context!())

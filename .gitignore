@@ -15,3 +15,6 @@ __pycache__/
 desktop/src-tauri/target/
 # node
 node_modules/
+
+# generated parity fixtures
+tests/parity/*.csv
