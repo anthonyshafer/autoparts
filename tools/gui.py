@@ -153,7 +153,29 @@ class App(tk.Tk):
         threading.Thread(target=work, daemon=True).start()
 
 
+def _selftest() -> int:
+    """Headless check that the FROZEN bundle runs with no Python/venv: exercises the
+    bundled deps (pandas/numpy/strategy) without opening a window or hitting the network.
+    CI runs `StockScanner(.exe) --selftest` on the built binary and checks the exit code.
+    """
+    import pandas as pd
+    import numpy as np
+    from strategy import compute_indicators, evaluate_row
+    n = 260
+    base = np.linspace(10, 20, n)
+    df = pd.DataFrame({
+        "Open": base, "High": base + 0.5, "Low": base - 0.5,
+        "Close": base, "Volume": np.full(n, 1_000_000.0),
+    })
+    d = compute_indicators(df)
+    evaluate_row(d.iloc[-1], market_ok=True)
+    print("StockScanner selftest OK")
+    return 0
+
+
 def main() -> None:
+    if "--selftest" in sys.argv:
+        raise SystemExit(_selftest())
     App().mainloop()
 
 

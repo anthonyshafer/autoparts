@@ -54,6 +54,19 @@ jobs:
         shell: bash
         run: test -e "${{ matrix.path }}" || { echo "missing ${{ matrix.path }}"; exit 1; }
 
+      # Prove the FROZEN binary actually runs with no Python/venv (imports resolve, deps
+      # bundled). Runs the app's headless --selftest and checks the exit code.
+      - name: Self-test the built app (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          $p = Start-Process -FilePath .\dist\StockScanner.exe -ArgumentList '--selftest' -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "StockScanner.exe --selftest failed (exit $($p.ExitCode))" }
+          Write-Host "self-test passed"
+
+      - name: Self-test the built app (macOS)
+        if: runner.os == 'macOS'
+        run: ./dist/StockScanner.app/Contents/MacOS/StockScanner --selftest
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:

@@ -8,5 +8,4 @@ data/
 build/
 dist/
 *.spec.bak
-journal/*.md
-!journal/TEMPLATE.md
+# journal: track logged calls
