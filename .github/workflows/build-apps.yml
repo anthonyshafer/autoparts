@@ -9,12 +9,11 @@ name: Build Apps (Windows + macOS)
 on:
   push:
     branches: [ main ]
-    paths:
-      - "tools/**"
-      - "StockScanner.spec"
-      - "requirements.txt"
-      - ".github/workflows/build-apps.yml"
+    tags: [ "v*" ]          # a version tag triggers the build + publishes a Release
   workflow_dispatch: {}
+
+permissions:
+  contents: write   # required for the tag Release step to publish the app downloads
 
 jobs:
   build:
