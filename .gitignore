@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.env.*
+.DS_Store
+data/
+build/
+dist/
+*.spec.bak
+journal/*.md
+!journal/TEMPLATE.md
