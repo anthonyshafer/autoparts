@@ -5,25 +5,32 @@
 use crate::engine::Ohlcv;
 use yahoo_finance_api as yahoo;
 
-fn interval_range(timeframe: &str) -> (&'static str, &'static str) {
+/// scan periods (ema_analyzer._fetch): weekly 10y / daily 3y.
+fn scan_interval_range(timeframe: &str) -> (&'static str, &'static str) {
     match timeframe {
         "daily" => ("1d", "3y"),
         _ => ("1wk", "10y"),
     }
 }
 
-async fn fetch_async(ticker: &str, timeframe: &str) -> Result<Ohlcv, String> {
-    let (interval, range) = interval_range(timeframe);
+/// backtest periods (backtest._fetch): weekly 15y / daily 5y.
+fn bt_interval_range(timeframe: &str) -> (&'static str, &'static str) {
+    match timeframe {
+        "daily" => ("1d", "5y"),
+        _ => ("1wk", "15y"),
+    }
+}
+
+async fn fetch_async(ticker: &str, interval: &str, range: &str) -> Result<Ohlcv, String> {
     let provider = yahoo::YahooConnector::new().map_err(|e| format!("connector: {e:?}"))?;
     let resp = provider
         .get_quote_range(ticker, interval, range)
         .await
         .map_err(|e| format!("fetch {ticker}: {e:?}"))?;
     let quotes = resp.quotes().map_err(|e| format!("quotes: {e:?}"))?;
-    let mut d = Ohlcv { open: vec![], high: vec![], low: vec![], close: vec![], volume: vec![] };
+    let mut d = Ohlcv::default();
     for q in quotes {
-        // Match Python _fetch's .dropna(): skip any bar with a non-finite price/volume so a
-        // null Yahoo row can't NaN-poison the EMAs or shift the bar count.
+        // Match Python _fetch's .dropna(): skip any bar with a non-finite price/volume.
         if ![q.open, q.high, q.low, q.close, q.adjclose].iter().all(|v| v.is_finite())
             || !(q.volume as f64).is_finite()
         {
@@ -35,14 +42,26 @@ async fn fetch_async(ticker: &str, timeframe: &str) -> Result<Ohlcv, String> {
         d.low.push(q.low * ratio);
         d.close.push(q.adjclose);
         d.volume.push(q.volume as f64);
+        d.ts.push(q.timestamp as i64);
     }
     Ok(d)
 }
 
-/// Blocking fetch (spins a tokio runtime) so the sync scan/backtest paths can call it.
-pub fn fetch(ticker: &str, timeframe: &str) -> Result<Ohlcv, String> {
+fn block_fetch(ticker: &str, interval: &str, range: &str) -> Result<Ohlcv, String> {
     let rt = tokio::runtime::Runtime::new().map_err(|e| e.to_string())?;
-    rt.block_on(fetch_async(ticker, timeframe))
+    rt.block_on(fetch_async(ticker, interval, range))
+}
+
+/// Fetch for the live scan (scan periods).
+pub fn fetch(ticker: &str, timeframe: &str) -> Result<Ohlcv, String> {
+    let (interval, range) = scan_interval_range(timeframe);
+    block_fetch(ticker, interval, range)
+}
+
+/// Fetch for the backtest (longer periods).
+pub fn fetch_bt(ticker: &str, timeframe: &str) -> Result<Ohlcv, String> {
+    let (interval, range) = bt_interval_range(timeframe);
+    block_fetch(ticker, interval, range)
 }
 
 /// market_ok = SPY's last close >= its 200-EMA on the same timeframe (matches _market_ok).

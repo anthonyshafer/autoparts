@@ -1,105 +1,72 @@
-// StockScanner — Tauri (Rust) desktop shell over the existing Python engine.
-//
-// The Rust side is deliberately thin: it locates the repo's Python CLI (tools/stocks.py)
-// and invokes it with --json, then hands the JSON straight to the web UI, which renders a
-// Bloomberg-style terminal skin. This keeps 100% of the trading logic in the audited Python
-// engine (one source of truth) while giving a real web-tech UI.
-//
-// mac-only POC: assumes `python3` (or a venv) with the deps is available on PATH.
+// StockScanner — Tauri (Rust) desktop app. Self-contained: the scan/backtest commands run
+// the NATIVE Rust engine (engine.rs + fetch.rs), which is parity-proven against the Python
+// tool. No Python at runtime — the app is a single standalone binary.
 
 mod engine;
 mod fetch;
 
 use std::path::PathBuf;
-use std::process::Command;
 
-// Resolve the repo root: the packaged app sets STOCKSCANNER_ROOT; in dev we walk up from
-// the executable / current dir to find tools/stocks.py.
-fn repo_root() -> Option<PathBuf> {
-    // 1. runtime env var
-    if let Ok(env_root) = std::env::var("STOCKSCANNER_ROOT") {
-        let p = PathBuf::from(env_root);
-        if p.join("tools/stocks.py").exists() {
-            return Some(p);
-        }
+// ---- Rust-native scan/backtest (no Python) — build the same JSON the frontend expects ----
+
+fn ymd(ts: i64) -> String {
+    use time::OffsetDateTime;
+    match OffsetDateTime::from_unix_timestamp(ts) {
+        Ok(dt) => format!("{:04}-{:02}-{:02}", dt.year(), dt.month() as u8, dt.day()),
+        Err(_) => ts.to_string(),
     }
-    // 2. persisted config file (~/.config/stockscanner/root) — written once, works for
-    //    any copy of the app regardless of where it's moved.
-    if let Ok(home) = std::env::var("HOME") {
-        let cfg = PathBuf::from(&home).join(".config/stockscanner/root");
-        if let Ok(s) = std::fs::read_to_string(&cfg) {
-            let p = PathBuf::from(s.trim());
-            if p.join("tools/stocks.py").exists() {
-                return Some(p);
-            }
-        }
-    }
-    // 3. compile-time default baked in at build (set SS_DEFAULT_ROOT when building)
-    if let Some(def) = option_env!("SS_DEFAULT_ROOT") {
-        let p = PathBuf::from(def);
-        if p.join("tools/stocks.py").exists() {
-            return Some(p);
-        }
-    }
-    // dev: start from CWD and the exe dir, walk up looking for tools/stocks.py
-    let mut candidates: Vec<PathBuf> = Vec::new();
-    if let Ok(cwd) = std::env::current_dir() {
-        candidates.push(cwd);
-    }
-    if let Ok(exe) = std::env::current_exe() {
-        if let Some(dir) = exe.parent() {
-            candidates.push(dir.to_path_buf());
-        }
-    }
-    for start in candidates {
-        let mut dir = Some(start.as_path());
-        while let Some(d) = dir {
-            if d.join("tools/stocks.py").exists() {
-                return Some(d.to_path_buf());
-            }
-            dir = d.parent();
-        }
-    }
-    None
 }
 
-fn python_bin(root: &PathBuf) -> String {
-    // Prefer a local venv if present, else system python3.
-    for cand in [".venv_gui/bin/python", ".venv/bin/python"] {
-        if root.join(cand).exists() {
-            return root.join(cand).to_string_lossy().into_owned();
-        }
+fn scan_json(ticker: &str, timeframe: &str) -> Result<String, String> {
+    let d = fetch::fetch(ticker, timeframe)?;
+    if d.len() < 60 {
+        return Err(format!("Only {} {} candles for {}; need history for a 200 EMA.", d.len(), timeframe, ticker));
     }
-    "python3".to_string()
+    let mkt = fetch::market_ok(timeframe);
+    let r = engine::scan_frame(&d, mkt, 0.005);
+    let rmul = if r.r_multiple.is_finite() { serde_json::json!(r.r_multiple) } else { serde_json::Value::Null };
+    let j = serde_json::json!({
+        "ticker": ticker.to_uppercase(), "timeframe": timeframe,
+        "verdict": r.verdict, "regime": r.regime, "price": r.price, "entry": r.entry,
+        "ema9": r.ema9, "ema20": r.ema20, "ema200": r.ema200, "rsi": r.rsi, "atr": r.atr,
+        "take_profit": r.take_profit, "stop_loss": r.stop_loss,
+        "upside_pct": r.upside_pct, "downside_pct": r.downside_pct, "r_multiple": rmul,
+        "rejection_zones": r.rejection_zones, "support": r.support,
+        "setup_quality": r.setup_quality, "reversal_confirmed": r.reversal_confirmed,
+        "slope_ok": r.slope_ok, "volume_ok": r.volume_ok, "rsi_ok": r.rsi_ok, "market_ok": r.market_ok,
+        "reasons": r.reasons, "fundamentals": {}
+    });
+    Ok(j.to_string())
 }
 
-// Run tools/stocks.py <args...> --json and return stdout (JSON) or an error string.
-fn run_cli(args: &[&str]) -> Result<String, String> {
-    let root = repo_root().ok_or_else(|| {
-        "Could not locate tools/stocks.py. Set STOCKSCANNER_ROOT to the repo path.".to_string()
-    })?;
-    let py = python_bin(&root);
-    let output = Command::new(&py)
-        .arg("tools/stocks.py")
-        .args(args)
-        .arg("--json")
-        .current_dir(&root)
-        .output()
-        .map_err(|e| format!("failed to launch {py}: {e}"))?;
-    if !output.status.success() {
-        return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
-    }
-    Ok(String::from_utf8_lossy(&output.stdout).into_owned())
+fn backtest_json(ticker: &str, timeframe: &str) -> Result<String, String> {
+    let d = fetch::fetch_bt(ticker, timeframe)?;
+    let r = engine::backtest(&d, 2.0, 52);
+    let log: Vec<serde_json::Value> = r.log.iter().map(|t| {
+        let ed = d.ts.get(t.entry_idx).map(|&x| ymd(x)).unwrap_or_else(|| t.entry_idx.to_string());
+        let xd = d.ts.get(t.exit_idx).map(|&x| ymd(x)).unwrap_or_else(|| t.exit_idx.to_string());
+        serde_json::json!({ "entry_date": ed, "exit_date": xd, "entry": t.entry, "exit": t.exit,
+            "stop": t.stop, "target": t.target, "bars_held": t.bars_held, "outcome": t.outcome, "r": t.r })
+    }).collect();
+    let pf = if r.profit_factor.is_finite() { serde_json::json!(r.profit_factor) } else { serde_json::Value::Null };
+    // Python stocks.py backtest --json returns a LIST; the frontend reads result[0].
+    let obj = serde_json::json!({
+        "ticker": ticker.to_uppercase(), "timeframe": timeframe, "bars": r.bars,
+        "trades": r.trades, "wins": r.wins, "losses": r.losses, "timeouts": r.timeouts,
+        "win_rate": r.win_rate, "avg_r": r.avg_r, "expectancy": r.avg_r, "profit_factor": pf,
+        "total_r": r.total_r, "note": r.note, "trade_log": log
+    });
+    Ok(serde_json::Value::Array(vec![obj]).to_string())
 }
 
 #[tauri::command]
 fn scan(ticker: String, timeframe: String) -> Result<String, String> {
-    run_cli(&["scan", &ticker, "--timeframe", &timeframe])
+    scan_json(&ticker, &timeframe)
 }
 
 #[tauri::command]
 fn backtest(ticker: String, timeframe: String) -> Result<String, String> {
-    run_cli(&["backtest", &ticker, "--timeframe", &timeframe])
+    backtest_json(&ticker, &timeframe)
 }
 
 // Save plain, undecorated text to the user's Downloads or Desktop. Returns the full path.
@@ -185,7 +152,7 @@ fn choose_folder() -> Result<String, String> {
 // diffed against the Python reference (tools/strategy.compute_indicators).
 fn run_parity(csv_path: &str) {
     let text = std::fs::read_to_string(csv_path).expect("read csv");
-    let mut d = engine::Ohlcv { open: vec![], high: vec![], low: vec![], close: vec![], volume: vec![] };
+    let mut d = engine::Ohlcv { open: vec![], high: vec![], low: vec![], close: vec![], volume: vec![], ts: vec![] };
     for (i, line) in text.lines().enumerate() {
         if i == 0 && line.to_lowercase().contains("close") { continue; } // header
         let f: Vec<f64> = line.split(',').map(|s| s.trim().parse::<f64>().unwrap_or(f64::NAN)).collect();
@@ -207,7 +174,7 @@ fn run_parity(csv_path: &str) {
 // scan result JSON to diff against ema_analyzer.analyze_frame.
 fn run_scan_parity(csv_path: &str, market_ok: bool) {
     let text = std::fs::read_to_string(csv_path).expect("read csv");
-    let mut d = engine::Ohlcv { open: vec![], high: vec![], low: vec![], close: vec![], volume: vec![] };
+    let mut d = engine::Ohlcv { open: vec![], high: vec![], low: vec![], close: vec![], volume: vec![], ts: vec![] };
     for (i, line) in text.lines().enumerate() {
         if i == 0 && line.to_lowercase().contains("close") { continue; }
         let f: Vec<f64> = line.split(',').map(|s| s.trim().parse::<f64>().unwrap_or(f64::NAN)).collect();
@@ -247,7 +214,7 @@ fn main() {
         let atr_mult = args.get(pos + 2).and_then(|s| s.parse().ok()).unwrap_or(2.0);
         let max_hold = args.get(pos + 3).and_then(|s| s.parse().ok()).unwrap_or(52);
         let text = std::fs::read_to_string(csv).expect("read csv");
-        let mut d = engine::Ohlcv { open: vec![], high: vec![], low: vec![], close: vec![], volume: vec![] };
+        let mut d = engine::Ohlcv { open: vec![], high: vec![], low: vec![], close: vec![], volume: vec![], ts: vec![] };
         for (i, line) in text.lines().enumerate() {
             if i == 0 && line.to_lowercase().contains("close") { continue; }
             let f: Vec<f64> = line.split(',').map(|s| s.trim().parse::<f64>().unwrap_or(f64::NAN)).collect();
@@ -264,6 +231,19 @@ fn main() {
             r.bars, r.trades, r.wins, r.losses, r.timeouts, r.win_rate, r.avg_r, pf, r.total_r,
             r.note.replace('"', "\\\""), trades.join(","),
         );
+        return;
+    }
+    // Exercise the exact Tauri command bodies from the CLI (for parity tests vs stocks.py).
+    if let Some(pos) = args.iter().position(|a| a == "--scan-json") {
+        let t = args.get(pos + 1).expect("ticker");
+        let tf = args.get(pos + 2).map(|s| s.as_str()).unwrap_or("weekly");
+        match scan_json(t, tf) { Ok(s) => println!("{s}"), Err(e) => { eprintln!("{e}"); std::process::exit(1); } }
+        return;
+    }
+    if let Some(pos) = args.iter().position(|a| a == "--bt-json") {
+        let t = args.get(pos + 1).expect("ticker");
+        let tf = args.get(pos + 2).map(|s| s.as_str()).unwrap_or("weekly");
+        match backtest_json(t, tf) { Ok(s) => println!("{s}"), Err(e) => { eprintln!("{e}"); std::process::exit(1); } }
         return;
     }
     // Live fetch + scan (Rust end-to-end): `stockscanner --fetch-scan <TICKER> <weekly|daily>`

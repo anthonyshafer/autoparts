@@ -2,13 +2,14 @@
 // Seeded to match pandas ewm(adjust=False) + NaN handling so outputs match the Python
 // reference bar-for-bar. Verified by the parity harness in tests/parity/.
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Ohlcv {
     pub open: Vec<f64>,
     pub high: Vec<f64>,
     pub low: Vec<f64>,
     pub close: Vec<f64>,
     pub volume: Vec<f64>,
+    pub ts: Vec<i64>, // unix seconds per bar (empty for CSV fixtures)
 }
 
 impl Ohlcv {
@@ -307,7 +308,11 @@ pub struct ScanResult {
     pub upside_pct: f64,
     pub downside_pct: f64,
     pub r_multiple: f64,
+    pub reasons: Vec<String>,
 }
+
+// Python bool formatting ("True"/"False") for the reason strings.
+fn pyb(b: bool) -> &'static str { if b { "True" } else { "False" } }
 
 pub fn scan_frame(d: &Ohlcv, market_ok: bool, fair_band: f64) -> ScanResult {
     let ind = compute_indicators(d);
@@ -364,13 +369,25 @@ pub fn scan_frame(d: &Ohlcv, market_ok: bool, fair_band: f64) -> ScanResult {
         "AVOID — premium, price above the 200 line".to_string()
     };
 
+    // reasons (match strategy.evaluate_row exactly, incl. Python True/False bool formatting)
+    let reasons = vec![
+        format!("regime={} (price {:.2} vs 200EMA {:.2})", sig.regime, price, e200),
+        format!("reversal {} (px>9 {}, px>20 {}, 9>20 {})",
+            if sig.reversal { "CONFIRMED" } else { "not confirmed" },
+            pyb(price > e9), pyb(price > e20), pyb(e9 > e20)),
+        format!("200-slope {}", if sig.slope_ok { "up/flat" } else { "DOWN (value-trap risk)" }),
+        format!("volume/OBV {}", if sig.volume_ok { "confirms" } else { "weak (fakeout risk)" }),
+        format!("RSI {:.0} {}", rsi_v, if sig.rsi_ok { "ok" } else { "OVERBOUGHT" }),
+        format!("market {}", if sig.market_ok { "risk-on (SPY>200)" } else { "RISK-OFF (SPY<200)" }),
+    ];
+
     ScanResult {
         price: entry, ema9: py_round(e9, 2), ema20: py_round(e20, 2), ema200: py_round(e200, 2),
         rsi: py_round(rsi_v, 1), atr: py_round(atr_v, 2),
         regime: sig.regime, reversal_confirmed: sig.reversal, slope_ok: sig.slope_ok,
         volume_ok: sig.volume_ok, rsi_ok: sig.rsi_ok, market_ok: sig.market_ok,
         setup_quality: format!("{}/5", sig.quality), verdict, entry, take_profit, stop_loss,
-        rejection_zones, support, upside_pct, downside_pct, r_multiple,
+        rejection_zones, support, upside_pct, downside_pct, r_multiple, reasons,
     }
 }
 
