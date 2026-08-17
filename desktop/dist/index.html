@@ -15,9 +15,16 @@
   [data-theme="green"]{--bg:#000900;--panel:#001200;--panel2:#001a00;--fg:#b8ffcf;--dim:#4e9e68;--hi:#eaffef;--accent:#00e676;--accent2:#5affa0;--field:#002200;--field-fg:#d6ffe2;--up:#00e676;--down:#ff6b6b;--warn:#c8ff4d;--grid:#0c3a1a;--rowhover:#031a08;--sel:#06280f;}
   [data-theme="dark"]{--bg:#12151c;--panel:#171b23;--panel2:#1d222c;--fg:#c3c9d5;--dim:#7b8494;--hi:#ffffff;--accent:#4aa3ff;--accent2:#7dbcff;--field:#232a36;--field-fg:#eef2f8;--up:#26de81;--down:#fc5c65;--warn:#fed330;--grid:#2b323e;--rowhover:#1b212b;--sel:#1d2937;}
   [data-theme="light"]{--bg:#eceef1;--panel:#fff;--panel2:#f6f7f9;--fg:#2a2f36;--dim:#6b7280;--hi:#000;--accent:#b45309;--accent2:#d97706;--field:#fff;--field-fg:#111;--up:#0a8a2a;--down:#c0271a;--warn:#a86910;--grid:#dcdfe4;--rowhover:#f0f2f5;--sel:#fdf2df;}
+  /* Commodore 64 — classic blue screen, light-blue text (Pepto palette) */
+  [data-theme="c64"]{--bg:#352879;--panel:#3b2e86;--panel2:#43379a;--fg:#8b80e6;--dim:#6c5eb5;--hi:#ffffff;--accent:#b8c76f;--accent2:#d4e08a;--field:#2c2168;--field-fg:#cfc9f5;--up:#9ad284;--down:#c46c71;--warn:#b8c76f;--grid:#4a3ea0;--rowhover:#3f3391;--sel:#4a3ea0;}
   *{box-sizing:border-box;}
   html,body{margin:0;height:100%;}
-  body{background:var(--bg);color:var(--fg);font-family:"SF Mono","Menlo","Consolas",monospace;font-size:13px;display:flex;flex-direction:column;height:100vh;font-variant-numeric:tabular-nums;}
+  :root{--app-font:"SF Mono","Menlo","Consolas",monospace;--app-size:13px;}
+  body{background:var(--bg);color:var(--fg);font-family:var(--app-font);font-size:var(--app-size);display:flex;flex-direction:column;height:100vh;font-variant-numeric:tabular-nums;}
+  /* column-density presets (emulate PET 80 / 120 column screens) */
+  body.col80{--app-size:15px;letter-spacing:.4px;}
+  body.col80 main{max-width:1180px;margin:0 auto;}
+  body.col120{--app-size:11.5px;letter-spacing:0;}
   svg{width:15px;height:15px;display:block;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
   header{display:flex;gap:8px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--grid);flex-wrap:wrap;background:var(--panel);}
   .brand{display:flex;align-items:center;gap:7px;color:var(--accent);font-weight:700;letter-spacing:2px;font-size:13px;margin-right:6px;}
@@ -111,6 +118,15 @@
   #aboutBox .ab-note{color:var(--dim);font-size:11px;line-height:1.5;margin-bottom:12px;}
   #aboutBox .ab-ver{color:var(--dim);font-size:11px;margin-bottom:16px;letter-spacing:1px;}
   #aboutBox button{margin:0 auto;}
+  #prefsOverlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:80;}
+  #prefsOverlay.show{display:flex;}
+  #prefsBox{background:var(--panel);border:1px solid var(--accent);border-radius:6px;padding:24px 28px;width:440px;box-shadow:0 12px 40px rgba(0,0,0,.6);}
+  #prefsBox .pf-title{color:var(--accent);font-size:13px;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:18px;}
+  #prefsBox .pf-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px;}
+  #prefsBox .pf-row select{flex:1;max-width:260px;}
+  #prefsBox .pf-preview{margin:16px 0 8px;padding:12px;border:1px solid var(--grid);background:var(--bg);color:var(--hi);text-align:center;font-size:16px;letter-spacing:1px;}
+  #prefsBox .pf-note{font-size:11px;line-height:1.5;margin-bottom:16px;}
+  #prefsBox .pf-btns{display:flex;gap:10px;justify-content:flex-end;}
   /* empty-tab canvas: pick what the tab holds */
   .empty-canvas{max-width:520px;margin:26px auto 20px;border:1px solid var(--grid);border-left:2px solid var(--accent);border-radius:4px;padding:22px 24px;background:var(--panel);}
   .empty-canvas .ec-title{color:var(--accent);font-size:12px;letter-spacing:2px;text-transform:uppercase;font-weight:700;}
@@ -168,10 +184,11 @@
     <span class="spacer"></span>
     <button id="splitBtn" class="icon" data-i="table" title="List/pane view of all tabs"></button>
     <button id="orientBtn" class="icon" data-i="layoutH" title="Toggle split orientation"></button>
+    <button id="prefsBtn" class="icon" data-i="gear" title="Preferences (font, columns, theme)"></button>
     <button id="helpBtn" class="icon" data-i="help" title="Toggle help panel"></button>
     <button id="exportBtn" class="icon" data-i="download" title="Export plain .txt"></button>
     <select id="exportLoc" title="Export location"><option value="downloads">Downloads</option><option value="desktop">Desktop</option></select>
-    <select id="theme" title="Theme"><option value="amber">Amber (Bloomberg)</option><option value="green">Green phosphor</option><option value="dark">Dark modern</option><option value="light">Light</option></select>
+    <select id="theme" title="Theme"><option value="amber">Amber (Bloomberg)</option><option value="c64">Commodore 64</option><option value="green">Green phosphor</option><option value="dark">Dark modern</option><option value="light">Light</option></select>
   </header>
   <div class="tabs" id="tabbar"></div>
   <div id="status">Ready. <b>＋</b> new tab · right-click a tab to color/rename · Scenario has locks &amp; resets · Saved lists all runs.</div>
@@ -196,6 +213,18 @@
   </div>
 </div>
 
+<div id="prefsOverlay">
+  <div id="prefsBox">
+    <div class="pf-title">Preferences</div>
+    <div class="pf-row"><label>Font</label><select id="pfFont"></select></div>
+    <div class="pf-row"><label>Columns</label><select id="pfCols"><option value="normal">Normal</option><option value="col80">PET 80-column</option><option value="col120">PET 120-column</option></select></div>
+    <div class="pf-row"><label>Default theme</label><select id="pfTheme"></select></div>
+    <div class="pf-preview" id="pfPreview">STOCKSCANNER  BSX  51.83  +37.8%</div>
+    <div class="pf-note dim">PET fonts render authentically if you have a C64/PET font installed (PetMe64 or C64 Pro Mono — free from kreativekorp.com); otherwise a clean monospace is used.</div>
+    <div class="pf-btns"><button id="pfSave" class="primary">Save as default</button><button id="pfReset">Reset</button><button id="pfClose">Close</button></div>
+  </div>
+</div>
+
 <script type="module">
   const invoke = window.__TAURI__?.core?.invoke;
   const $=(id)=>document.getElementById(id);
@@ -203,7 +232,9 @@
   const fmtMoney=(x)=>"$"+Number(x).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
   const cls=(v)=>v>=0?"up":"down";
   const now=()=>new Date().toLocaleString();
-  const PALETTE=["#ff9f1c","#33d17a","#ff5c5c","#4aa3ff","#b10dc9","#ffcf40","#7fdbff","#f012be","#01ff70","#ff851b","#39cccc","#9aa0a6"];
+  // Commodore 64 16-color palette (Pepto), organized: reds/oranges, greens, blues, greys
+  const PALETTE=["#68372B","#9A6759","#6F4F25","#B8C76F","#588D43","#9AD284","#70A4B2","#6C5EB5","#352879","#6F3D86","#FFFFFF","#959595","#6C6C6C","#444444","#B8C76F","#68372B"];
+  const C64={black:"#000000",white:"#FFFFFF",red:"#68372B",cyan:"#70A4B2",purple:"#6F3D86",green:"#588D43",blue:"#352879",yellow:"#B8C76F",orange:"#6F4F25",brown:"#433900",ltred:"#9A6759",dkgrey:"#444444",grey:"#6C6C6C",ltgreen:"#9AD284",ltblue:"#6C5EB5",ltgrey:"#959595"};
   const SCEN_DEFAULTS={entry:52,target:71,stop:49,capital:50000,winprob:45,n:20000};
 
   // ---- inline SVG icon set (no emojis) ----
@@ -228,6 +259,7 @@
     book:'<svg viewBox="0 0 24 24"><path d="M4 4h7a2 2 0 012 2v14a2 2 0 00-2-2H4z"/><path d="M20 4h-7a2 2 0 00-2 2v14a2 2 0 012-2h7z"/></svg>',
     ext:'<svg viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"/></svg>',
     note:'<svg viewBox="0 0 24 24"><path d="M4 4h16v12l-4 4H4z"/><path d="M20 16h-4v4"/><path d="M8 9h8M8 13h5"/></svg>',
+    gear:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5 5l2.1 2.1M16.9 16.9L19 19M19 5l-2.1 2.1M7.1 16.9L5 19"/></svg>',
   };
   const ic=(n)=>ICON[n]||"";
   // inject icons into header buttons that declared data-i
@@ -639,6 +671,34 @@ you were testing before you see the numbers.</pre></div>`;
   $("aboutVer").textContent="v"+APP_VERSION;
   $("aboutVer").onclick=()=>openRef(ghReleaseUrl(APP_VERSION));   // → GitHub release for this version
   $("aboutRepo").onclick=()=>openRef(GH_REPO+"/releases");
+
+  // ---- Preferences: font, columns, default theme ----
+  const FONTS={
+    "system":['System Mono','"SF Mono","Menlo","Consolas",monospace'],
+    "menlo":['Menlo','"Menlo","Monaco",monospace'],
+    "courier":['Courier','"Courier New",Courier,monospace'],
+    "andale":['Andale Mono','"Andale Mono","Courier New",monospace'],
+    "pet":['PET / C64 (retro)','"C64 Pro Mono","PetMe64","PetMe","PetMe128","Px437 PET Me","Menlo",monospace'],
+    "pet2y":['PET double-Y (retro)','"PetMe642Y","PetMe2Y","C64 Pro Mono","Menlo",monospace'],
+  };
+  const THEME_NAMES={amber:"Amber (Bloomberg)",c64:"Commodore 64",green:"Green phosphor",dark:"Dark modern",light:"Light"};
+  let prefFont="system",prefCols="normal";
+  function applyPrefs(){document.documentElement.style.setProperty("--app-font",FONTS[prefFont]?.[1]||FONTS.system[1]);document.body.classList.remove("col80","col120");if(prefCols!=="normal")document.body.classList.add(prefCols);}
+  function loadPrefs(){prefFont=localStorage.getItem("ss_font")||"system";prefCols=localStorage.getItem("ss_cols")||"normal";applyPrefs();}
+  function openPrefs(){
+    const pf=$("pfFont");pf.innerHTML=Object.entries(FONTS).map(([k,v])=>`<option value="${k}">${v[0]}</option>`).join("");pf.value=prefFont;
+    $("pfCols").value=prefCols;
+    const pt=$("pfTheme");pt.innerHTML=Object.entries(THEME_NAMES).map(([k,v])=>`<option value="${k}">${v}</option>`).join("");pt.value=$("theme").value;
+    const upd=()=>{const prev=$("pfPreview");prev.style.fontFamily=FONTS[pf.value][1];prev.setAttribute("data-c",$("pfCols").value);};
+    pf.onchange=upd;$("pfCols").onchange=upd;pt.onchange=()=>{document.body.setAttribute("data-theme",pt.value);$("theme").value=pt.value;};
+    upd();$("prefsOverlay").classList.add("show");
+  }
+  $("prefsBtn").onclick=openPrefs;
+  $("pfClose").onclick=()=>$("prefsOverlay").classList.remove("show");
+  $("prefsOverlay").onclick=(e)=>{if(e.target.id==="prefsOverlay")$("prefsOverlay").classList.remove("show");};
+  $("pfSave").onclick=()=>{prefFont=$("pfFont").value;prefCols=$("pfCols").value;const th=$("pfTheme").value;localStorage.setItem("ss_font",prefFont);localStorage.setItem("ss_cols",prefCols);$("theme").value=th;document.body.setAttribute("data-theme",th);applyPrefs();persist();$("prefsOverlay").classList.remove("show");status("Preferences saved as default.");};
+  $("pfReset").onclick=()=>{prefFont="system";prefCols="normal";localStorage.removeItem("ss_font");localStorage.removeItem("ss_cols");applyPrefs();openPrefs();status("Preferences reset to defaults.");};
+  loadPrefs();
 
   $("orientBtn").innerHTML=(savedLayout==="vertical"?ic("layoutV"):ic("layoutH"));
   if(restore()){$("orientBtn").innerHTML=(savedLayout==="vertical"?ic("layoutV"):ic("layoutH"));renderTabs();if(helpOn)$("helpBtn").classList.add("primary");renderView();}else{newTab("scan");}
