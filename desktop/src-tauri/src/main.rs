@@ -202,11 +202,42 @@ fn run_parity(csv_path: &str) {
     }
 }
 
+// Scan parity: `stockscanner --scan-parity <ohlcv.csv> <0|1 market_ok>` prints the full
+// scan result JSON to diff against ema_analyzer.analyze_frame.
+fn run_scan_parity(csv_path: &str, market_ok: bool) {
+    let text = std::fs::read_to_string(csv_path).expect("read csv");
+    let mut d = engine::Ohlcv { open: vec![], high: vec![], low: vec![], close: vec![], volume: vec![] };
+    for (i, line) in text.lines().enumerate() {
+        if i == 0 && line.to_lowercase().contains("close") { continue; }
+        let f: Vec<f64> = line.split(',').map(|s| s.trim().parse::<f64>().unwrap_or(f64::NAN)).collect();
+        if f.len() < 5 { continue; }
+        d.open.push(f[0]); d.high.push(f[1]); d.low.push(f[2]); d.close.push(f[3]); d.volume.push(f[4]);
+    }
+    let r = engine::scan_frame(&d, market_ok, 0.005);
+    let jf = |x: f64| if x.is_finite() { format!("{:.4}", x) } else { "null".to_string() };
+    let arr = |v: &Vec<f64>| { let s: Vec<String> = v.iter().map(|x| format!("{:.2}", x)).collect(); format!("[{}]", s.join(",")) };
+    let jb = |b: bool| if b { "true" } else { "false" };
+    let esc = |s: &str| s.replace('\\', "\\\\").replace('"', "\\\"");
+    println!(
+        "{{\"regime\":\"{}\",\"verdict\":\"{}\",\"reversal_confirmed\":{},\"slope_ok\":{},\"volume_ok\":{},\"rsi_ok\":{},\"market_ok\":{},\"setup_quality\":\"{}\",\"price\":{},\"ema9\":{},\"ema20\":{},\"ema200\":{},\"rsi\":{},\"atr\":{},\"entry\":{},\"take_profit\":{},\"stop_loss\":{},\"upside_pct\":{},\"downside_pct\":{},\"r_multiple\":{},\"rejection_zones\":{},\"support\":{}}}",
+        esc(&r.regime), esc(&r.verdict), jb(r.reversal_confirmed), jb(r.slope_ok), jb(r.volume_ok),
+        jb(r.rsi_ok), jb(r.market_ok), r.setup_quality, jf(r.price), jf(r.ema9), jf(r.ema20),
+        jf(r.ema200), jf(r.rsi), jf(r.atr), jf(r.entry), jf(r.take_profit), jf(r.stop_loss),
+        jf(r.upside_pct), jf(r.downside_pct), jf(r.r_multiple), arr(&r.rejection_zones), arr(&r.support),
+    );
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     if let Some(pos) = args.iter().position(|a| a == "--parity") {
         let csv = args.get(pos + 1).expect("--parity needs a csv path");
         run_parity(csv);
+        return;
+    }
+    if let Some(pos) = args.iter().position(|a| a == "--scan-parity") {
+        let csv = args.get(pos + 1).expect("--scan-parity needs a csv path");
+        let mkt = args.get(pos + 2).map(|s| s == "1").unwrap_or(true);
+        run_scan_parity(csv, mkt);
         return;
     }
     tauri::Builder::default()

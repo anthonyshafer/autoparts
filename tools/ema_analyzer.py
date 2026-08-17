@@ -115,8 +115,30 @@ def analyze(ticker: str, timeframe: str = "weekly", fair_band: float = 0.005) ->
             f"Only {len(data)} {timeframe} candles for {ticker!r}; need history for a 200 EMA."
         )
 
-    data = compute_indicators(data)
     market_ok = _market_ok(timeframe)
+    a = analyze_frame(data, market_ok, fair_band=fair_band, ticker=ticker, timeframe=timeframe)
+
+    fundamentals = {}
+    try:
+        info = yf.Ticker(ticker).info
+        for k, label in [
+            ("shortName", "name"), ("marketCap", "market_cap"), ("trailingPE", "pe"),
+            ("targetMeanPrice", "analyst_target"), ("fiftyTwoWeekLow", "52w_low"),
+            ("fiftyTwoWeekHigh", "52w_high"),
+        ]:
+            if info.get(k) is not None:
+                fundamentals[label] = info[k]
+    except Exception:
+        pass
+    a.fundamentals = fundamentals
+    return a
+
+
+def analyze_frame(data, market_ok: bool, fair_band: float = 0.005,
+                  ticker: str = "", timeframe: str = "weekly") -> Analysis:
+    """Compute the full Analysis from an OHLCV frame — no network. Shared by analyze()
+    (the live tool) and the Rust-parity dumper, so both exercise identical logic."""
+    data = compute_indicators(data)
     last = data.iloc[-1]
     sig = evaluate_row(last, market_ok=market_ok, fair_band=fair_band)
 
@@ -157,19 +179,6 @@ def analyze(ticker: str, timeframe: str = "weekly", fair_band: float = 0.005) ->
     else:
         verdict = "AVOID — premium, price above the 200 line"
 
-    fundamentals = {}
-    try:
-        info = yf.Ticker(ticker).info
-        for k, label in [
-            ("shortName", "name"), ("marketCap", "market_cap"), ("trailingPE", "pe"),
-            ("targetMeanPrice", "analyst_target"), ("fiftyTwoWeekLow", "52w_low"),
-            ("fiftyTwoWeekHigh", "52w_high"),
-        ]:
-            if info.get(k) is not None:
-                fundamentals[label] = info[k]
-    except Exception:
-        pass
-
     return Analysis(
         ticker=ticker.upper(), timeframe=timeframe, price=entry,
         ema9=round(e9, 2), ema20=round(e20, 2), ema200=round(e200, 2),
@@ -180,7 +189,7 @@ def analyze(ticker: str, timeframe: str = "weekly", fair_band: float = 0.005) ->
         verdict=verdict, entry=entry, take_profit=take_profit,
         rejection_zones=rejection_zones, support=support, stop_loss=stop_loss,
         upside_pct=upside_pct, downside_pct=downside_pct, r_multiple=r_multiple,
-        reasons=sig.reasons, fundamentals=fundamentals,
+        reasons=sig.reasons, fundamentals={},
     )
 
 
