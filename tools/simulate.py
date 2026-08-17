@@ -31,12 +31,16 @@ import numpy as np
 # price = current; bear/base/bull = representative price midpoints of each range.
 # div = extra total-return yield added on top of price return (PFE only).
 DOSSIER = {
-    #          current   bear   base   bull    div    beta (systematic risk, ~ from research)
+    # current/bear/base/bull from the dossier's scenario midpoints (analyst-informed).
+    # beta = ASSUMED systematic risk. PFE 0.28 is the dossier's sourced figure; the others
+    # are rough estimates (high-beta growth ~1.3-1.5, BSX ~0.9), NOT measured — treat as a
+    # sensitivity knob, not fact.
+    #          current   bear   base   bull    div    beta
     "BSX":  dict(price=51.83, bear=43.0, base=61.5, bull=84.5, div=0.0,   beta=0.90),
-    "SOFI": dict(price=18.29, bear=13.0, base=20.0, bull=29.5, div=0.0,   beta=1.50),
-    "ZETA": dict(price=29.05, bear=20.5, base=31.0, bull=41.0, div=0.0,   beta=1.50),
+    "SOFI": dict(price=18.29, bear=13.0, base=20.0, bull=29.5, div=0.0,   beta=1.45),
+    "ZETA": dict(price=29.05, bear=20.5, base=31.0, bull=41.0, div=0.0,   beta=1.55),
     "UBER": dict(price=75.95, bear=66.0, base=95.0, bull=132.5, div=0.0,  beta=1.25),
-    "PFE":  dict(price=26.79, bear=23.5, base=28.5, bull=34.0, div=0.064, beta=0.40),
+    "PFE":  dict(price=26.79, bear=23.5, base=28.5, bull=34.0, div=0.064, beta=0.28),
 }
 
 # Shared market shock (one draw per path, applied to every name scaled by its beta) so
@@ -44,18 +48,24 @@ DOSSIER = {
 MARKET_VOL = 0.16   # ~annual stdev of the broad-market surprise
 
 # Allocation of a fixed capital pool per profile (fractions; remainder = cash at 0% return).
+# NOTE: both profiles use bias=0.0 so the comparison is APPLES-TO-APPLES — the only things
+# that differ are allocation, cash, and beta exposure. (An earlier version skewed the modes
+# optimistically for aggressive / pessimistically for conservative, which unfairly inflated
+# the spread; that "optimism knob" was removed.)
 PROFILES = {
     "AGGRESSIVE": dict(
         alloc={"UBER": 0.30, "ZETA": 0.25, "BSX": 0.20, "SOFI": 0.20, "PFE": 0.05},
-        bias=+0.15,   # shifts each triangular mode toward the bull end (optimistic)
+        bias=0.0,
         note="Fully invested, concentrated in high-upside/high-beta names, ignores the "
-             "discount-only rule, optimistic scenario weighting.",
+             "discount-only rule. Same scenario weighting as conservative — differs only "
+             "by allocation + cash + beta.",
     ),
     "CONSERVATIVE": dict(
         alloc={"BSX": 0.20, "PFE": 0.20, "UBER": 0.10},   # 50% cash
-        bias=-0.15,   # shifts each triangular mode toward the bear end (pessimistic)
-        note="Only the discount setup (BSX) + income (PFE) + a value tilt (UBER), 50% cash, "
-             "pessimistic scenario weighting.",
+        bias=0.0,
+        note="Only the discount setup (BSX) + income (PFE) + a value tilt (UBER), 50% cash. "
+             "Same scenario weighting as aggressive — the lower risk comes from cash + "
+             "lower-beta names, not from a pessimistic thumb on the scale.",
     ),
 }
 

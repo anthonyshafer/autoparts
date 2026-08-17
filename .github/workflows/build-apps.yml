@@ -60,3 +60,11 @@ jobs:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.path }}
           if-no-files-found: error
+
+      # On a version tag (git tag v1.0 && git push --tags) publish a public Releases page
+      # with the app attached — the download link non-technical users can use (no login).
+      - name: Attach to Release (tags only)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.path }}
