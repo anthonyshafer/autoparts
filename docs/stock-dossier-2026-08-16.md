@@ -28,6 +28,16 @@ CANNOT-VERIFY items and any live quote must be reconfirmed before you act. You d
 | **UBER** | $75.95 | ⛔ AVOID (premium) | PREMIUM | $101.50 (+34%) | Buy/Strong Buy | Cheap vs growth; AV/Waymo disintermediation is the swing |
 | **PFE** | $26.79 | ⛔ AVOID (premium) | PREMIUM | $28.64 (+7%) | Buy (modal Hold) | ~6.4% yield income play; patent cliff + IRA cap upside |
 
+**What "consensus" and "analyst mean" mean in this document:** the aggregated view of the
+**sell-side equity research analysts** who formally cover each stock — the professional analysts
+at banks and research firms (Morgan Stanley, KBW, Needham, etc.) who publish ratings and 12-month
+price targets. "**Analyst mean**" = the average of their 12-month price targets. "**Consensus**"
+= the modal rating on the Strong Buy → Buy → Hold → Sell → Strong Sell scale. These figures are
+compiled by aggregators (primarily [stockanalysis.com](https://stockanalysis.com), cross-checked
+against TipRanks / MarketBeat), each based on a stated number of analysts (e.g. BSX = 31, UBER =
+50). It is **not** retail sentiment, not the trend of the stock, and not this tool's signal — it's
+the Wall Street professional coverage, which historically skews bullish and lags fast moves.
+
 **Key tension:** your EMA strategy only *buys discounts* (price below the 200-week EMA). By that
 rule, **only BSX qualifies** — the other four are trading above their 200-week line ("premium"),
 so regardless of how good the fundamentals look, they're not setups *for your system*. The
