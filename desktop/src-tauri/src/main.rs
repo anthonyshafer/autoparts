@@ -105,6 +105,9 @@ fn save_text(filename: String, contents: String, location: String) -> Result<Str
     let home = std::env::var("HOME").map_err(|_| "no HOME env".to_string())?;
     let dir = match location.as_str() {
         "desktop" => PathBuf::from(&home).join("Desktop"),
+        "downloads" => PathBuf::from(&home).join("Downloads"),
+        // any absolute path (from Choose Folder) is used directly
+        p if p.starts_with('/') => PathBuf::from(p),
         _ => PathBuf::from(&home).join("Downloads"),
     };
     // sanitize filename: strip path separators, force a .txt extension
@@ -155,9 +158,28 @@ fn open_url(url: String) -> Result<(), String> {
     Ok(())
 }
 
+// Native folder picker (macOS) via AppleScript; returns the chosen POSIX path, or an
+// empty string if the user cancels.
+#[tauri::command]
+fn choose_folder() -> Result<String, String> {
+    #[cfg(target_os = "macos")]
+    {
+        let script = "try\n set f to choose folder with prompt \"Choose export folder\"\n return POSIX path of f\non error number -128\n return \"\"\nend try";
+        let out = std::process::Command::new("osascript")
+            .arg("-e").arg(script)
+            .output()
+            .map_err(|e| format!("could not open folder picker: {e}"))?;
+        return Ok(String::from_utf8_lossy(&out.stdout).trim().to_string());
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        Err("folder picker is macOS-only in this build".into())
+    }
+}
+
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![scan, backtest, save_text, open_url])
+        .invoke_handler(tauri::generate_handler![scan, backtest, save_text, open_url, choose_folder])
         .run(tauri::generate_context!())
         .expect("error while running StockScanner");
 }

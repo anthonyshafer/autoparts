@@ -16,11 +16,11 @@
   [data-theme="dark"]{--bg:#12151c;--panel:#171b23;--panel2:#1d222c;--fg:#c3c9d5;--dim:#7b8494;--hi:#ffffff;--accent:#4aa3ff;--accent2:#7dbcff;--field:#232a36;--field-fg:#eef2f8;--up:#26de81;--down:#fc5c65;--warn:#fed330;--grid:#2b323e;--rowhover:#1b212b;--sel:#1d2937;}
   [data-theme="light"]{--bg:#eceef1;--panel:#fff;--panel2:#f6f7f9;--fg:#2a2f36;--dim:#6b7280;--hi:#000;--accent:#b45309;--accent2:#d97706;--field:#fff;--field-fg:#111;--up:#0a8a2a;--down:#c0271a;--warn:#a86910;--grid:#dcdfe4;--rowhover:#f0f2f5;--sel:#fdf2df;}
   /* Commodore 64 — classic blue screen, light-blue text (Pepto palette) */
-  [data-theme="c64"]{--bg:#352879;--panel:#3b2e86;--panel2:#43379a;--fg:#8b80e6;--dim:#6c5eb5;--hi:#ffffff;--accent:#b8c76f;--accent2:#d4e08a;--field:#2c2168;--field-fg:#cfc9f5;--up:#9ad284;--down:#c46c71;--warn:#b8c76f;--grid:#4a3ea0;--rowhover:#3f3391;--sel:#4a3ea0;}
+  [data-theme="c64"]{--bg:#2b2170;--panel:#332a86;--panel2:#3c33a0;--fg:#cfcaff;--dim:#9a90e8;--hi:#ffffff;--accent:#eaf28a;--accent2:#f5fbb0;--field:#241b60;--field-fg:#eae6ff;--up:#b6ff9a;--down:#ff8f94;--warn:#eaf28a;--grid:#544ab8;--rowhover:#3a3199;--sel:#4a41ad;}
   *{box-sizing:border-box;}
   html,body{margin:0;height:100%;}
-  :root{--app-font:"SF Mono","Menlo","Consolas",monospace;--app-size:13px;}
-  body{background:var(--bg);color:var(--fg);font-family:var(--app-font);font-size:var(--app-size);display:flex;flex-direction:column;height:100vh;font-variant-numeric:tabular-nums;}
+  :root{--app-font:"SF Mono","Menlo","Consolas",monospace;--app-size:13px;--app-weight:400;}
+  body{background:var(--bg);color:var(--fg);font-family:var(--app-font);font-size:var(--app-size);font-weight:var(--app-weight);display:flex;flex-direction:column;height:100vh;font-variant-numeric:tabular-nums;}
   /* column-density presets (emulate PET 80 / 120 column screens) */
   body.col80{--app-size:15px;letter-spacing:.4px;}
   body.col80 main{max-width:1180px;margin:0 auto;}
@@ -35,11 +35,18 @@
   button{display:inline-flex;align-items:center;gap:6px;background:var(--field);color:var(--fg);border:1px solid var(--grid);padding:6px 11px;font-family:inherit;font-weight:600;letter-spacing:1px;cursor:pointer;border-radius:2px;text-transform:uppercase;font-size:11px;}
   button:hover{border-color:var(--accent);color:var(--hi);}
   button.icon{padding:6px 7px;}
+  .blabel{display:none;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;}
+  body.help-on button.icon .blabel{display:inline;}
+  body.help-on button.icon{padding-left:9px;padding-right:11px;gap:6px;}
+  /* reference links, now inside the tab card */
+  .reflinks.card{margin-top:16px;border:1px solid var(--grid);border-radius:3px;padding:8px 10px;background:var(--panel2);}
   button.primary{background:var(--accent);color:#000;border-color:var(--accent);}
   button.primary:hover{background:var(--accent2);color:#000;}
   .spacer{flex:1;}
   /* tab bar — Warp-style: solid full-height colored tabs, active brighter with close chip */
-  .tabs{display:flex;gap:3px;align-items:stretch;padding:4px 8px;border-bottom:1px solid var(--grid);overflow-x:auto;background:var(--bg);min-height:38px;}
+  .tabsrow{display:flex;align-items:stretch;border-bottom:1px solid var(--grid);background:var(--bg);}
+  .tabsrow #navBtn{margin:4px 2px 4px 8px;flex:0 0 auto;align-self:center;}
+  .tabs{display:flex;gap:3px;align-items:stretch;padding:4px 8px;overflow-x:auto;background:var(--bg);min-height:38px;flex:1;min-width:0;}
   .tab{display:flex;align-items:center;gap:9px;padding:0 14px;border-radius:7px;cursor:pointer;white-space:nowrap;color:var(--fg);font-size:12px;letter-spacing:.3px;border:1px solid transparent;
     background:color-mix(in srgb, var(--tabc,#666) 16%, var(--panel));}
   .tab:hover{background:color-mix(in srgb, var(--tabc,#666) 26%, var(--panel));}
@@ -49,12 +56,46 @@
   .tab .x{display:none;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;background:rgba(255,255,255,.14);}
   .tab.active .x,.tab:hover .x{display:flex;} .tab .x:hover{background:var(--down);color:#fff;}
   .tab .x svg{width:11px;height:11px;}
+  .tab .r{display:none;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;background:rgba(255,255,255,.10);}
+  .tab.active .r,.tab:hover .r{display:flex;} .tab .r:hover{background:var(--accent);color:#000;}
+  .tab .r svg{width:12px;height:12px;}
   .tab.addtab{color:var(--accent);padding:0 12px;background:transparent;font-size:16px;}
   .tab.addtab:hover{background:var(--panel2);}
   #status{padding:5px 12px;font-size:11px;color:var(--dim);border-bottom:1px solid var(--grid);background:var(--panel);}
   #status b{color:var(--accent);font-weight:600;}
   .body{flex:1;display:flex;min-height:0;}
   main{flex:1;overflow:auto;padding:14px;min-width:0;}
+  /* ---- Warp-style tab SIDEBAR. Mutually exclusive with the top tab strip:
+         nav=side => top strip hidden, sidebar shown. nav=top => the reverse. ---- */
+  body[data-nav="side"] .tabsrow{display:none;}
+  body[data-nav="top"] #sidebar{display:none;}
+  #sidebar{width:268px;flex:0 0 268px;border-right:1px solid var(--grid);background:var(--panel);display:flex;flex-direction:column;min-height:0;
+    display:flex;flex-direction:column;min-height:0;}
+  #sidebar .sbtop{display:flex;gap:6px;align-items:center;padding:9px 10px;border-bottom:1px solid var(--grid);}
+  #sidebar .sbsearch{flex:1;display:flex;align-items:center;gap:7px;background:var(--field);border:1px solid var(--grid);border-radius:6px;padding:5px 9px;min-width:0;}
+  #sidebar .sbsearch svg{width:13px;height:13px;stroke:var(--dim);flex:0 0 auto;}
+  #sidebar .sbsearch input{background:transparent;border:0;padding:0;font-size:12px;width:100%;color:var(--field-fg);min-width:0;}
+  #sidebar .sbsearch input:focus{outline:none;}
+  #sidebar .sbadd{padding:6px 8px;border:1px solid var(--grid);background:var(--field);border-radius:6px;cursor:pointer;color:var(--accent);display:flex;}
+  #sidebar .sbadd:hover{border-color:var(--accent);}
+  #sidebar .sblist{flex:1;overflow:auto;padding:8px 8px 14px;min-height:0;}
+  /* Scenarios pinned to the bottom of the sidebar (Warp-style special section) */
+  #sidebar .sbbottom{flex:0 0 auto;max-height:42%;overflow:auto;border-top:1px solid var(--grid);background:var(--panel2);padding:8px;}
+  #sidebar .sbbottom:empty{display:none;}
+  #sidebar .grp{font-size:9px;text-transform:uppercase;letter-spacing:1.6px;color:var(--dim);padding:12px 6px 5px;font-weight:700;}
+  #sidebar .sbitem{display:flex;gap:9px;align-items:flex-start;padding:8px 9px;border-radius:8px;cursor:pointer;
+    margin-bottom:3px;border:1px solid transparent;background:color-mix(in srgb, var(--tabc,#666) 10%, var(--panel2));}
+  #sidebar .sbitem:hover{background:color-mix(in srgb, var(--tabc,#666) 20%, var(--panel2));}
+  #sidebar .sbitem.active{background:color-mix(in srgb, var(--tabc,#666) 34%, var(--panel2));
+    border-color:color-mix(in srgb, var(--tabc,#666) 65%, transparent);}
+  #sidebar .sbitem .dot{width:9px;height:9px;border-radius:3px;background:var(--tabc,#666);margin-top:3px;flex:0 0 auto;}
+  #sidebar .sbitem .meta{flex:1;min-width:0;}
+  #sidebar .sbitem .t{color:var(--hi);font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #sidebar .sbitem .s{color:var(--dim);font-size:10px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.4px;}
+  #sidebar .sbitem .x{opacity:0;width:16px;height:16px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;color:var(--dim);}
+  #sidebar .sbitem:hover .x{opacity:.75;} #sidebar .sbitem .x:hover{opacity:1;background:var(--down);color:#fff;}
+  #sidebar .sbitem .x svg{width:10px;height:10px;}
+  #sidebar .sbempty{color:var(--dim);font-size:11px;padding:14px 8px;line-height:1.6;}
   aside#help{width:290px;flex:0 0 290px;border-left:1px solid var(--grid);background:var(--panel);overflow:auto;padding:14px;display:none;}
   aside#help.show{display:block;}
   aside#help h3{color:var(--accent);font-size:11px;text-transform:uppercase;letter-spacing:2px;margin:0 0 10px;border-bottom:1px solid var(--grid);padding-bottom:6px;}
@@ -78,9 +119,11 @@
   tbody td.val{color:var(--hi);font-weight:600;}
   tbody tr:hover{background:var(--rowhover);}
   tbody tr.sel{background:var(--sel);box-shadow:inset 2px 0 0 var(--accent);}
-  /* sliders — ALWAYS one per row (stacked vertically). The range inputs are horizontal
-     controls; letting them flow into columns made them read as side-by-side scroll bars. */
-  .sliders{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
+  /* scenario layout: GRID = sliders 2-3 across + results row; STACKED = single column */
+  .scenwrap.scen-grid .sliders{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:12px;margin-bottom:16px;}
+  .scenwrap.scen-grid .kpi{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));}
+  .scenwrap.scen-stack .sliders{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
+  .scenwrap.scen-stack .kpi{grid-template-columns:1fr;}
   .sliders .slider{width:100%;}
   .slider{border:1px solid var(--grid);border-left:2px solid var(--grid);padding:10px 12px;background:var(--panel);}
   .slider.locked{border-left-color:var(--accent);}
@@ -124,6 +167,17 @@
   #prefsBox .pf-title{color:var(--accent);font-size:13px;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:18px;}
   #prefsBox .pf-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px;}
   #prefsBox .pf-row select{flex:1;max-width:260px;}
+  #prefsBox .pf-row input{flex:1;max-width:260px;}
+  /* split export button + dropdown menu */
+  .split-btn{display:inline-flex;}
+  .split-btn #exportBtn{border-radius:2px 0 0 2px;}
+  .split-btn .caret{border-radius:0 2px 2px 0;border-left:none;padding:6px 4px;}
+  .split-btn .caret svg{width:12px;height:12px;}
+  .menu{position:absolute;z-index:70;background:var(--panel);border:1px solid var(--accent);border-radius:3px;padding:4px;display:none;box-shadow:0 6px 20px rgba(0,0,0,.6);min-width:150px;}
+  .menu.show{display:block;}
+  .menu .mi{padding:7px 10px;cursor:pointer;font-size:12px;color:var(--fg);border-radius:2px;}
+  .menu .mi:hover{background:var(--accent);color:#000;}
+  .menu .mi.on{color:var(--accent);} .menu .mi.on:hover{color:#000;}
   #prefsBox .pf-preview{margin:16px 0 8px;padding:12px;border:1px solid var(--grid);background:var(--bg);color:var(--hi);text-align:center;font-size:16px;letter-spacing:1px;}
   #prefsBox .pf-note{font-size:11px;line-height:1.5;margin-bottom:16px;}
   #prefsBox .pf-btns{display:flex;gap:10px;justify-content:flex-end;}
@@ -138,14 +192,17 @@
   .empty-canvas .ec-opts button svg{width:20px;height:20px;}
   .empty-canvas .ec-opts button:hover{background:var(--accent);color:#000;}
   /* per-tab notes */
-  .notes{margin-top:16px;border:1px solid var(--grid);border-left:2px solid var(--accent);background:var(--panel);}
-  .notes .nh{display:flex;align-items:center;gap:8px;padding:6px 11px;border-bottom:1px solid var(--grid);}
+  /* notes — integrated: no heavy box, a thin accent rule ties it to the result above */
+  .notes{margin-top:20px;border-top:1px solid var(--grid);padding-top:10px;}
+  .notes .nh{display:flex;align-items:center;gap:7px;padding:0 2px 6px;color:var(--dim);}
+  .notes .nh svg{width:13px;height:13px;stroke:var(--dim);}
   .notes .nh .k{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);flex:1;}
   .notes .nh .saved{font-size:10px;color:var(--up);opacity:0;transition:opacity .2s;}
   .notes .nh .saved.on{opacity:1;}
-  .notes textarea{width:100%;min-height:90px;resize:vertical;background:var(--field);color:var(--field-fg);
-    border:0;padding:10px 11px;font-family:inherit;font-size:12px;line-height:1.55;display:block;}
-  .notes textarea:focus{outline:1px solid var(--accent);outline-offset:-1px;}
+  .notes textarea{width:100%;min-height:72px;resize:vertical;background:transparent;color:var(--fg);
+    border:1px solid transparent;border-radius:3px;padding:8px 9px;font-family:inherit;font-size:12px;line-height:1.6;display:block;}
+  .notes textarea:hover{border-color:var(--grid);}
+  .notes textarea:focus{outline:none;border-color:var(--accent);background:var(--field);}
   /* ticker log */
   .logwrap{display:flex;gap:12px;height:100%;} .logwrap.vertical{flex-direction:column;}
   .logwrap .list,.logwrap .viewer{flex:1;overflow:auto;border:1px solid var(--grid);}
@@ -173,27 +230,45 @@
 <body data-theme="amber">
   <header>
     <span class="brand"><svg viewBox="0 0 32 32"><rect x="2.5" y="2.5" width="27" height="27" rx="7"/><text x="16" y="13.5" text-anchor="middle" font-family="Menlo,Consolas,monospace" font-weight="700" font-size="11" letter-spacing="-.5" fill="currentColor" stroke="none">SS</text><line x1="9" y1="22" x2="9" y2="27"/><rect x="7.6" y="22.5" width="2.8" height="4" rx=".8"/><line x1="16" y1="18" x2="16" y2="27"/><rect x="14.6" y="20" width="2.8" height="5.5" rx=".8"/><line x1="23" y1="15" x2="23" y2="26"/><rect x="21.6" y="16.5" width="2.8" height="7" rx=".8"/></svg>STOCKSCANNER</span>
-    <label>Ticker</label><input id="ticker" value="BSX" />
-    <select id="tf"><option>weekly</option><option>daily</option></select>
-    <button id="scanBtn" class="primary" data-i="search">Scan</button>
-    <button id="rescanBtn" data-i="reset" title="Re-run this tab's scan/backtest in place">Rescan</button>
-    <button id="btBtn" data-i="chart">Backtest</button>
-    <button id="scenBtn" data-i="sliders">Scenario</button>
-    <button id="logBtn" data-i="book" title="Per-ticker scan log with notes">Log</button>
-    <button id="savedBtn" data-i="table">Saved</button>
+    <!-- search-mode controls (hidden from the bar; the tab loader drives new scans) -->
+    <span id="searchControls" style="display:none"><label>Ticker</label><input id="ticker" value="BSX" />
+      <select id="tf"><option>weekly</option><option>daily</option></select>
+      <button id="scanBtn" class="primary" data-i="search">Scan</button>
+      <button id="btBtn" data-i="chart">Backtest</button>
+      <button id="scenBtn" data-i="sliders">Scenario</button></span>
     <span class="spacer"></span>
-    <button id="splitBtn" class="icon" data-i="table" title="List/pane view of all tabs"></button>
-    <button id="orientBtn" class="icon" data-i="layoutH" title="Toggle split orientation"></button>
-    <button id="prefsBtn" class="icon" data-i="gear" title="Preferences (font, columns, theme)"></button>
-    <button id="helpBtn" class="icon" data-i="help" title="Toggle help panel"></button>
-    <button id="exportBtn" class="icon" data-i="download" title="Export plain .txt"></button>
-    <select id="exportLoc" title="Export location"><option value="downloads">Downloads</option><option value="desktop">Desktop</option></select>
-    <select id="theme" title="Theme"><option value="amber">Amber (Bloomberg)</option><option value="c64">Commodore 64</option><option value="green">Green phosphor</option><option value="dark">Dark modern</option><option value="light">Light</option></select>
+    <button id="logBtn" class="icon" data-i="book" data-label="Log" title="Per-ticker scan log with notes"></button>
+    <button id="savedBtn" class="icon" data-i="table" data-label="Saved" title="Saved runs"></button>
+    <button id="helpBtn" class="icon" data-i="help" data-label="Help" title="Toggle help + labels"></button>
+    <span class="split-btn">
+      <button id="exportBtn" class="icon" data-i="download" data-label="Export" title="Export plain .txt to the saved location"></button>
+      <button id="exportCaret" class="icon caret" data-i="caret" title="Choose export location"></button>
+    </span>
+    <button id="profileBtn" class="icon" data-i="user" data-label="Profile" title="Profile & options"></button>
+    <select id="theme" style="display:none"><option value="amber">Amber (Bloomberg)</option><option value="c64">Commodore 64</option><option value="green">Green phosphor</option><option value="dark">Dark modern</option><option value="light">Light</option></select>
   </header>
-  <div class="tabs" id="tabbar"></div>
+  <div id="exportMenu" class="menu">
+    <div class="mi" data-loc="downloads">Downloads</div>
+    <div class="mi" data-loc="desktop">Desktop</div>
+    <div class="mi" data-loc="__choose__">Choose Folder…</div>
+  </div>
+  <div class="tabsrow">
+    <button id="navBtn" class="icon" data-i="panel" title="Collapse / expand tabs (sidebar)"></button>
+    <div class="tabs" id="tabbar"></div>
+  </div>
   <div id="status">Ready. <b>＋</b> new tab · right-click a tab to color/rename · Scenario has locks &amp; resets · Saved lists all runs.</div>
-  <div class="body"><main id="view"></main><aside id="help"></aside></div>
-  <div class="reflinks" id="reflinks"></div>
+  <div class="body">
+    <nav id="sidebar">
+      <div class="sbtop">
+        <div class="sbsearch"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="sbq" placeholder="Search tabs…" /></div>
+        <div class="sbadd" id="sbadd" title="New tab"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+        <button id="sbNav" class="icon" data-i="panel" title="Collapse sidebar (back to tab bar)"></button>
+      </div>
+      <div class="sblist" id="sblist"></div>
+      <div class="sbbottom" id="sbbottom"></div>
+    </nav>
+    <main id="view"></main><aside id="help"></aside>
+  </div>
   <footer>Decision support from indicator rules — not a prediction, not 95% accurate, not licensed advice. Swing/position horizon.</footer>
 
 <div id="ctx"><div class="swatches" id="swatches"></div><input id="ctxName" placeholder="Rename tab…" style="width:100%;margin-bottom:6px"/><div class="mi" id="ctxRename"></div></div>
@@ -215,10 +290,13 @@
 
 <div id="prefsOverlay">
   <div id="prefsBox">
-    <div class="pf-title">Preferences</div>
+    <div class="pf-title">Profile &amp; options</div>
+    <div class="pf-row"><label>Name</label><input id="pfName" placeholder="Your name"/></div>
+    <div class="pf-row"><label>Theme</label><select id="pfTheme"></select></div>
     <div class="pf-row"><label>Font</label><select id="pfFont"></select></div>
+    <div class="pf-row"><label>Font size</label><span style="flex:1;display:flex;align-items:center;gap:10px;max-width:260px"><input type="range" id="pfSize" min="10" max="22" step="0.5" style="flex:1;accent-color:var(--accent)"/><span id="pfSizeV" style="color:var(--hi);min-width:44px;text-align:right">13.5px</span></span></div>
+    <div class="pf-row"><label>Weight</label><select id="pfWeight"><option value="300">Thin</option><option value="400">Regular</option><option value="700">Bold</option></select></div>
     <div class="pf-row"><label>Columns</label><select id="pfCols"><option value="normal">Normal</option><option value="col80">PET 80-column</option><option value="col120">PET 120-column</option></select></div>
-    <div class="pf-row"><label>Default theme</label><select id="pfTheme"></select></div>
     <div class="pf-preview" id="pfPreview">STOCKSCANNER  BSX  51.83  +37.8%</div>
     <div class="pf-note dim">PET fonts render authentically if you have a C64/PET font installed (PetMe64 or C64 Pro Mono — free from kreativekorp.com); otherwise a clean monospace is used.</div>
     <div class="pf-btns"><button id="pfSave" class="primary">Save as default</button><button id="pfReset">Reset</button><button id="pfClose">Close</button></div>
@@ -226,7 +304,29 @@
 </div>
 
 <script type="module">
-  const invoke = window.__TAURI__?.core?.invoke;
+  // Resolve the Tauri bridge LAZILY, at call time — not once at script load.
+  // The script can execute before window.__TAURI__ is injected, and the API shape moved
+  // between versions (v2: __TAURI__.core.invoke, v1: __TAURI__.invoke / __TAURI__.tauri.invoke).
+  // Capturing it eagerly produced "TypeError: invoke is not a function".
+  function getInvoke(){
+    const T=window.__TAURI__;
+    // Public global (needs withGlobalTauri): v2 core.invoke, or older shapes.
+    if(T){
+      const cands=[[T.core&&T.core.invoke,T.core],[T.invoke,T],[T.tauri&&T.tauri.invoke,T.tauri]];
+      for(const [f,host] of cands){ if(typeof f==="function") return (cmd,args)=>f.call(host,cmd,args); }
+    }
+    // Tauri v2 ALWAYS exposes the internal bridge, even without withGlobalTauri.
+    const I=window.__TAURI_INTERNALS__;
+    if(I&&typeof I.invoke==="function") return (cmd,args)=>I.invoke(cmd,args);
+    return null;
+  }
+  const hasBridge=()=>getInvoke()!==null;
+  // Single call path: throws a clear, catchable error when running outside the app.
+  async function invoke(cmd,args){
+    const fn=getInvoke();
+    if(!fn)throw new Error("Not running inside the StockScanner app (no Tauri bridge).");
+    return fn(cmd,args);
+  }
   const $=(id)=>document.getElementById(id);
   const status=(m)=>{$("status").innerHTML=m;};
   const fmtMoney=(x)=>"$"+Number(x).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -260,20 +360,26 @@
     ext:'<svg viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"/></svg>',
     note:'<svg viewBox="0 0 24 24"><path d="M4 4h16v12l-4 4H4z"/><path d="M20 16h-4v4"/><path d="M8 9h8M8 13h5"/></svg>',
     gear:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5 5l2.1 2.1M16.9 16.9L19 19M19 5l-2.1 2.1M7.1 16.9L5 19"/></svg>',
+    panel:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>',
+    user:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>',
+    caret:'<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>',
   };
   const ic=(n)=>ICON[n]||"";
   // inject icons into header buttons that declared data-i
   document.querySelectorAll("[data-i]").forEach(b=>{const s=ic(b.dataset.i);b.insertAdjacentHTML("afterbegin",s);});
+  // inject toggleable text labels (shown beside icons only when Help is on)
+  document.querySelectorAll("[data-label]").forEach(b=>{if(!b.querySelector(".blabel"))b.insertAdjacentHTML("beforeend",`<span class="blabel">${b.dataset.label}</span>`);});
 
   $("theme").onchange=(e)=>{document.body.setAttribute("data-theme",e.target.value);persist();};
 
   // ---- persistence ----
-  function persist(){try{localStorage.setItem("ss_tabs",JSON.stringify(tabs));localStorage.setItem("ss_history",JSON.stringify(history));localStorage.setItem("ss_theme",$("theme").value);localStorage.setItem("ss_savedLayout",savedLayout);localStorage.setItem("ss_help",helpOn?"1":"0");localStorage.setItem("ss_tickerLogs",JSON.stringify(tickerLogs));}catch(e){}}
+  function persist(){try{localStorage.setItem("ss_tabs",JSON.stringify(tabs));localStorage.setItem("ss_history",JSON.stringify(history));localStorage.setItem("ss_theme",$("theme").value);localStorage.setItem("ss_savedLayout",savedLayout);localStorage.setItem("ss_help",helpOn?"1":"0");localStorage.setItem("ss_tickerLogs",JSON.stringify(tickerLogs));localStorage.setItem("ss_tabLayout",tabLayout);}catch(e){}}
   function restore(){try{
     const th=localStorage.getItem("ss_theme");if(th){$("theme").value=th;document.body.setAttribute("data-theme",th);}
     history=JSON.parse(localStorage.getItem("ss_history")||"[]");savedLayout=localStorage.getItem("ss_savedLayout")||"horizontal";
     helpOn=localStorage.getItem("ss_help")==="1";
     tickerLogs=JSON.parse(localStorage.getItem("ss_tickerLogs")||"{}");
+    tabLayout=localStorage.getItem("ss_tabLayout")||"top";
     const t=JSON.parse(localStorage.getItem("ss_tabs")||"[]");
     if(t.length){tabs=t;seq=Math.max(...tabs.map(x=>+x.id.slice(1)),0);active=tabs[0].id;return true;}
   }catch(e){}return false;}
@@ -294,22 +400,24 @@
   function logEntryById(id){for(const k of Object.keys(tickerLogs)){const e=tickerLogs[k].find(x=>x.id===id);if(e)return e;}return null;}
 
   let tabs=[],active=null,seq=0,history=[],savedLayout="horizontal",ctxTab=null,sortKey="tsRaw",sortDir=-1,selRow=null,helpOn=false;
-  // ONE view at a time, Warp-style: "tabs" | "split" | "saved" | "log". Never two at once.
+  // Content view — ONE at a time: "tabs" | "saved" | "log". Never two at once.
   let mode="tabs";
+  // Navigation layout — Warp-style, mutually exclusive: "top" (tab strip) | "side" (sidebar).
+  // Turning one on turns the other off; they never appear together.
+  let tabLayout="top",sbQuery="";
   let tickerLogs={},logTicker=null,logSel=null;
-  const MODE_BTN={split:"splitBtn",saved:"savedBtn",log:"logBtn"};
+  const MODE_BTN={saved:"savedBtn",log:"logBtn"};
   function setMode(m){
     mode=(m===mode&&m!=="tabs")?"tabs":m;           // clicking the active view toggles back to tabs
     Object.entries(MODE_BTN).forEach(([k,id])=>{const b=$(id);if(b)b.classList.toggle("primary",mode===k);});
     renderTabs();renderView();persist();
     status(mode==="tabs"?"Tab view."
-      :mode==="split"?"List/pane view — click a row to open that tab as the active view."
       :mode==="saved"?"Saved runs — click headers to sort, a row to view."
       :"Ticker log — every scan per ticker, with notes saved against each run.");
   }
 
   function newTab(kind="scan"){const id="t"+(++seq);
-    const t={id,kind,title:kind==="scenario"?"Scenario":"(empty)",color:PALETTE[(seq-1)%12],data:null,plain:"",ts:null,
+    const t={id,kind,title:kind==="scenario"?"Scenario":"New",color:PALETTE[(seq-1)%12],data:null,plain:"",ts:null,
       scen:{...SCEN_DEFAULTS},locks:{},notes:"",ticker:"",objective:"",
       onboard:kind==="scenario"};   // scenario tabs open on the onboarding step first
     tabs.push(t);active=id;mode="tabs";renderTabs();renderView();persist();return t;}
@@ -321,14 +429,18 @@
     const bar=$("tabbar");bar.innerHTML="";
     tabs.forEach(t=>{const el=document.createElement("div");el.className="tab"+(t.id===active&&mode==="tabs"?" active":"");
       el.style.setProperty("--tabc",t.color);
-      el.innerHTML=`<span class="glyph"></span><span>${escapeHtml(t.title)}</span><span class="x" title="Close">${ic("close")}</span>`;
+      const canRescan=!!t.data||(t.kind==="scenario"&&!t.onboard);
+      el.innerHTML=`<span class="glyph"></span><span>${escapeHtml(t.title)}</span>`
+        +(canRescan?`<span class="r" title="Rescan this tab">${ic("reset")}</span>`:"")
+        +`<span class="x" title="Close">${ic("close")}</span>`;
       // clicking a tab always returns to tab view — the views are mutually exclusive
-      el.onclick=(e)=>{if(e.target.closest(".x")){closeTab(t.id);}else{active=t.id;setMode("tabs");}};
+      el.onclick=(e)=>{if(e.target.closest(".x")){closeTab(t.id);}else if(e.target.closest(".r")){rescanTab(t);}else{active=t.id;setMode("tabs");}};
       el.oncontextmenu=(e)=>{e.preventDefault();openCtx(e.clientX,e.clientY,t);};bar.appendChild(el);});
     const add=document.createElement("div");add.className="tab addtab";add.innerHTML=ic("add");add.title="New tab";add.onclick=()=>newTab("scan");bar.appendChild(add);
+    if(tabLayout==="side")renderSidebar();   // keep the sidebar in step with tab state
   }
 
-  function openCtx(x,y,t){ctxTab=t;const sw=$("swatches");sw.innerHTML="";PALETTE.forEach(c=>{const d=document.createElement("div");d.className="sw";d.style.background=c;d.onclick=()=>{t.color=c;$("ctx").style.display="none";renderTabs();persist();};sw.appendChild(d);});$("ctxRename").innerHTML=ic("pencil")+"<span>Apply name</span>";const inp=$("ctxName");inp.value=t.title==="(empty)"?"":t.title;const ctx=$("ctx");ctx.style.left=Math.min(x,innerWidth-200)+"px";ctx.style.top=y+"px";ctx.style.display="block";setTimeout(()=>inp.focus(),0);}
+  function openCtx(x,y,t){ctxTab=t;const sw=$("swatches");sw.innerHTML="";PALETTE.forEach(c=>{const d=document.createElement("div");d.className="sw";d.style.background=c;d.onclick=()=>{t.color=c;$("ctx").style.display="none";renderTabs();persist();};sw.appendChild(d);});$("ctxRename").innerHTML=ic("pencil")+"<span>Apply name</span>";const inp=$("ctxName");inp.value=(t.title==="New"||t.title==="(empty)")?"":t.title;const ctx=$("ctx");ctx.style.left=Math.min(x,innerWidth-200)+"px";ctx.style.top=y+"px";ctx.style.display="block";setTimeout(()=>inp.focus(),0);}
   function commitRename(){const t=ctxTab;const n=$("ctxName").value.trim();$("ctx").style.display="none";if(t&&n){t.title=n;renderTabs();if(mode!=="tabs")renderView();persist();}}
   $("ctxRename").onclick=commitRename;
   $("ctxName").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();commitRename();}});
@@ -347,7 +459,7 @@
   // ---- per-tab notes --------------------------------------------------------
   const notesHTML=(t)=>`<div class="notes"><div class="nh">${ic("note")}<span class="k">Notes — ${escapeHtml(t.title)}</span>
       <span class="saved" id="noteSaved_${t.id}">saved</span></div>
-    <textarea id="notes_${t.id}" placeholder="Your read on this run: thesis, what would falsify it, what you'd do next…">${escapeHtml(t.notes||"")}</textarea></div>`;
+    <textarea id="notes_${t.id}">${escapeHtml(t.notes||"")}</textarea></div>`;
   let noteTimer=null;
   function wireNotes(t){
     const ta=$("notes_"+t.id);if(!ta)return;
@@ -396,9 +508,10 @@
     if(t.kind==="scenario"&&t.onboard){el.innerHTML=onboardHTML(t);wireOnboard(t);return;}
     if(t.kind==="scenario"){el.innerHTML=scenarioHTML(t)+notesHTML(t);wireScenario(t);recalcScenario(t,false);wireNotes(t);return;}
     if(!t.data){el.innerHTML=emptyCanvasHTML(t)+notesHTML(t);wireEmptyCanvas(t);wireNotes(t);return;}
-    if(t.kind==="scan")el.innerHTML=scanHTML(t.data)+tsLine(t)+notesHTML(t);
-    else el.innerHTML=backtestHTML(t.data)+tsLine(t)+notesHTML(t);
-    wireNotes(t);
+    const refs=refLinksHTML(t.ticker);
+    if(t.kind==="scan")el.innerHTML=scanHTML(t.data)+tsLine(t)+refs+notesHTML(t);
+    else el.innerHTML=backtestHTML(t.data)+tsLine(t)+refs+notesHTML(t);
+    wireRefLinks(el);wireNotes(t);
   }
   const helpKind=(t)=>!t?"scan":t.kind==="scenario"?"scenario":t.kind==="backtest"?"backtest":"scan";
 
@@ -407,21 +520,60 @@
     renderRefLinks();
     if(mode==="saved"){v.innerHTML="";v.appendChild(savedView());renderHelp("saved");return;}
     if(mode==="log"){v.innerHTML="";v.appendChild(logView());renderHelp("log");return;}
-    if(mode==="split"){v.innerHTML="";v.appendChild(splitView());renderHelp(helpKind(cur()));return;}
     const t=cur();fillBody(v,t);renderHelp(helpKind(t));
   }
 
-  // global list/pane viewer of OPEN TABS
-  function splitView(){
-    const wrap=document.createElement("div");wrap.className="saved "+(savedLayout==="vertical"?"vertical":"");
-    const listBox=document.createElement("div");listBox.className="list";
-    listBox.innerHTML=`<table><thead><tr><th>Tab</th><th>Type</th><th>Run</th></tr></thead><tbody>${tabs.map(t=>`<tr data-id="${t.id}" class="${t.id===active?"sel":""}"><td><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${t.color};margin-right:8px"></span>${escapeHtml(t.title)}</td><td class="dim">${t.kind}</td><td class="dim">${t.ts||"—"}</td></tr>`).join("")}</tbody></table>`;
-    const pane=document.createElement("div");pane.className="viewer";
-    fillBody(pane,cur());
-    wrap.appendChild(listBox);wrap.appendChild(pane);
-    // choosing a row leaves the list view entirely and opens that tab (Warp behaviour)
-    setTimeout(()=>{listBox.querySelectorAll("tr[data-id]").forEach(tr=>tr.onclick=()=>{active=tr.dataset.id;setMode("tabs");});},0);
-    return wrap;
+  // ---- Warp-style tab sidebar (replaces the top strip when nav=side) ----
+  // Tabs are grouped by ticker, like Warp groups by workspace. Search filters live.
+  function groupOf(t){
+    if(t.kind==="scenario")return "SCENARIOS";
+    if(t.kind==="backtest")return "BACKTESTS";
+    if(t.data)return "SCANS";
+    return "NEW";
+  }
+  function subtitleOf(t){
+    const bits=[t.kind];
+    if(t.kind==="scenario"&&t.objective)bits.push(t.objective.slice(0,34));
+    if(t.ts)bits.push(t.ts.replace(/:\d\d\s/," ").replace(/,/,""));
+    if(t.notes&&t.notes.trim())bits.push("• noted");
+    return bits.join(" · ");
+  }
+  const sbItemHTML=(t)=>`<div class="sbitem ${t.id===active&&mode==="tabs"?"active":""}" data-id="${t.id}" style="--tabc:${t.color}">
+       <span class="dot"></span>
+       <span class="meta"><span class="t">${escapeHtml(t.title)}</span><span class="s">${escapeHtml(subtitleOf(t))}</span></span>
+       <span class="x" title="Close">${ic("close")}</span></div>`;
+  function wireSbItems(container){
+    container.querySelectorAll(".sbitem").forEach(el=>{
+      el.onclick=(e)=>{const id=el.dataset.id;if(e.target.closest(".x")){closeTab(id);renderSidebar();return;}active=id;setMode("tabs");};
+      el.oncontextmenu=(e)=>{e.preventDefault();const t=tabs.find(x=>x.id===el.dataset.id);if(t)openCtx(e.clientX,e.clientY,t);};
+    });
+  }
+  function renderSidebar(){
+    const list=$("sblist"),bottom=$("sbbottom");if(!list)return;
+    const q=sbQuery.trim().toLowerCase();
+    const match=(t)=>!q||[t.title,t.ticker,t.kind,t.objective,t.notes].some(x=>(x||"").toLowerCase().includes(q));
+    const shown=tabs.filter(match);
+    // Scenarios pinned to the bottom; everything else grouped in the main list.
+    const scen=shown.filter(t=>t.kind==="scenario");
+    const others=shown.filter(t=>t.kind!=="scenario");
+    if(!shown.length){list.innerHTML=`<div class="sbempty">${q?"No tabs match “"+escapeHtml(sbQuery)+"”.":"No tabs yet. Use + to start one."}</div>`;if(bottom)bottom.innerHTML="";return;}
+    const groups={};others.forEach(t=>{const g=groupOf(t);(groups[g]=groups[g]||[]).push(t);});
+    const order=Object.keys(groups).sort((a,b)=>{const seq=["SCANS","BACKTESTS","NEW"];return (seq.indexOf(a)+1||9)-(seq.indexOf(b)+1||9)||a.localeCompare(b);});
+    list.innerHTML=order.length?order.map(g=>`<div class="grp">${escapeHtml(g)}</div>`+groups[g].map(sbItemHTML).join("")).join("")
+      :`<div class="sbempty">No scans yet. Use + to start one.</div>`;
+    if(bottom)bottom.innerHTML=scen.length?`<div class="grp">Scenarios</div>`+scen.map(sbItemHTML).join(""):"";
+    wireSbItems(list);if(bottom)wireSbItems(bottom);
+  }
+  function applyNav(){
+    document.body.setAttribute("data-nav",tabLayout);
+    const b=$("navBtn");if(b)b.classList.toggle("primary",tabLayout==="side");
+    if(tabLayout==="side")renderSidebar();
+  }
+  function toggleNav(){
+    tabLayout=tabLayout==="side"?"top":"side";
+    applyNav();renderTabs();persist();
+    status(tabLayout==="side"?"Sidebar view — the tab bar is hidden. Search and group tabs on the left."
+                             :"Tab bar view — the sidebar is hidden.");
   }
   const tsLine=(t)=>t.ts?`<pre class="ts">\nRun: ${t.ts}</pre>`:"";
 
@@ -455,14 +607,20 @@
         <button class="mini ${locked?"on":""}" id="lock_${id}" title="Lock (held constant; others vary around it)">${locked?ic("lock"):ic("unlock")}</button>
         <button class="mini" id="rst_${id}" title="Reset this slider">${ic("reset")}</button></span></div>
       <input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${s[id]}"></div>`;};
-    return `<div class="scenbar"><button id="resetAll">${ic("resetAll")}Reset all</button><button id="snapSave">${ic("save")}Save snapshot</button><span class="ts" id="scents">${t.ts?("Last run: "+t.ts):"not run yet"}</span></div>
-      <div class="sliders">${SLIDERS.map(one).join("")}</div><div class="kpi" id="scenkpi"></div><pre id="scenout" class="dim"></pre>`;}
+    return `<div class="scenbar"><button id="resetAll">${ic("resetAll")}Reset all</button><button id="snapSave">${ic("save")}Save snapshot</button>
+        <button id="scenLayoutBtn" title="Toggle grid / stacked layout">${(t.scenLayout||"grid")==="stack"?ic("layoutV"):ic("layoutH")}${(t.scenLayout||"grid")==="stack"?"Stacked":"Grid"}</button>
+        <span class="ts" id="scents">${t.ts?("Last run: "+t.ts):"not run yet"}</span></div>
+      <div class="scenwrap scen-${t.scenLayout||"grid"}">
+        <div class="sliders">${SLIDERS.map(one).join("")}</div>
+        <div class="scenres"><div class="kpi" id="scenkpi"></div><pre id="scenout" class="dim"></pre></div>
+      </div>`;}
   function wireScenario(t){SLIDERS.forEach(([id])=>{const el=$(id);if(!el)return;
       el.oninput=()=>{if(t.locks[id]){el.value=t.scen[id];return;}t.scen[id]=parseFloat(el.value);$(id+"v").textContent=el.value+(id==="winprob"?"%":"");recalcScenario(t,true);};
       $("lock_"+id).onclick=()=>{t.locks[id]=!t.locks[id];renderView();persist();};
       $("rst_"+id).onclick=()=>{t.scen[id]=SCEN_DEFAULTS[id];renderView();recalcScenario(t,true);};});
     $("resetAll").onclick=()=>{t.scen={...SCEN_DEFAULTS};t.locks={};renderView();recalcScenario(t,true);};
-    $("snapSave").onclick=()=>{addHistory({ticker:"SCENARIO",kind:"scenario",title:t.title,plain:t.plain});status("Snapshot saved to <b>Saved</b>.");};}
+    $("snapSave").onclick=()=>{addHistory({ticker:"SCENARIO",kind:"scenario",title:t.title,plain:t.plain});status("Snapshot saved to <b>Saved</b>.");};
+    const lb=$("scenLayoutBtn");if(lb)lb.onclick=()=>{t.scenLayout=((t.scenLayout||"grid")==="stack")?"grid":"stack";renderView();persist();};}
   const mulberry32=(a)=>()=>{a|=0;a=a+0x6D2B79F5|0;let x=Math.imul(a^a>>>15,1|a);x=x+Math.imul(x^x>>>7,61|x)^x;return((x^x>>>14)>>>0)/4294967296;};
   function recalcScenario(t,stamp){const s=t.scen;const rng=mulberry32(12345);
     const jit=(id,base,amt)=>t.locks[id]?base:base*(1+(rng()-0.5)*amt);
@@ -475,7 +633,7 @@
     const locks=Object.keys(t.locks).filter(k=>t.locks[k]);
     if($("scenout"))$("scenout").textContent=`Entry ${s.entry}  Target ${s.target}  Stop ${s.stop}  |  win-prob ${s.winprob}%  |  ${s.n} sims`+(locks.length?`  |  LOCKED: ${locks.join(", ")}`:"")+`\nRisk/share ${risk0.toFixed(2)}   Reward/share ${reward0.toFixed(2)}   R ${isFinite(rmult)?rmult.toFixed(2):"n/a"}\nWorst 1% ${fmtMoney(pct(0.01))}   Best 1% ${fmtMoney(pct(0.99))}\n\nUnlocked inputs are perturbed around their value each run; locked ones held constant.\nExpected value follows YOUR inputs — a what-if distribution, not a prediction.`;
     if(stamp){t.ts=now();if($("scents"))$("scents").textContent="Last run: "+t.ts;}
-    if(t.title==="(empty)")t.title="Scenario";
+    if(t.title==="New"||t.title==="(empty)")t.title="Scenario";
     t.plain=[`STOCKSCANNER — SCENARIO`,`Run: ${t.ts||now()}`,`Entry ${s.entry}  Target ${s.target}  Stop ${s.stop}`,`Capital ${s.capital}  Win-prob ${s.winprob}%  Sims ${s.n}`,locks.length?`Locked: ${locks.join(", ")}`:`Locked: none`,`Shares ${shares}`,`R-multiple ${isFinite(rmult)?rmult.toFixed(2):"n/a"}`,`Expected R ${evR.toFixed(2)}`,`Expected P&L ${mean.toFixed(2)}`,`Prob of loss ${probLoss.toFixed(0)}%`,`P10/P90 ${pct(0.10).toFixed(2)}/${pct(0.90).toFixed(2)}`,`Worst 1% ${pct(0.01).toFixed(2)}  Best 1% ${pct(0.99).toFixed(2)}`,``,`What-if, not a prediction.`].join("\n");
     persist();
   }
@@ -572,19 +730,17 @@ you were testing before you see the numbers.</pre></div>`;
     ["Earnings",t=>`https://finance.yahoo.com/quote/${t}/analysis`],
   ];
   async function openRef(url){
-    if(invoke){try{await invoke("open_url",{url});return;}catch(e){status("Could not open browser: "+escapeHtml(String(e)));return;}}
+    if(hasBridge()){try{await invoke("open_url",{url});return;}catch(e){status("Could not open browser: "+escapeHtml(String(e)));return;}}
     window.open(url,"_blank","noopener");
   }
-  function renderRefLinks(){
-    const bar=$("reflinks");if(!bar)return;
-    const t=cur();
-    const sym=(t&&t.ticker?t.ticker:($("ticker").value||"")).trim().toUpperCase()
-      ||(mode==="log"&&logTicker?logTicker:"");
-    if(!sym){bar.innerHTML=`<span class="lbl">Reference</span><span class="ts">enter a ticker to enable data links</span>`;return;}
-    bar.innerHTML=`<span class="lbl">${sym} data</span>`+
-      REFS.map(([n,f])=>`<span class="rl" data-u="${f(sym)}">${ic("ext")}${n}</span>`).join("");
-    bar.querySelectorAll("[data-u]").forEach(a=>a.onclick=()=>openRef(a.dataset.u));
+  function renderRefLinks(){const bar=$("reflinks");if(bar)bar.innerHTML="";}   // legacy global bar retired
+  // per-tab reference links, rendered INSIDE the tab card
+  function refLinksHTML(sym){
+    if(!sym)return "";
+    return `<div class="reflinks card"><span class="lbl">${escapeHtml(sym)} data</span>`+
+      REFS.map(([n,f])=>`<span class="rl" data-u="${f(sym)}">${ic("ext")}${n}</span>`).join("")+`</div>`;
   }
+  function wireRefLinks(el){el.querySelectorAll(".reflinks [data-u]").forEach(a=>a.onclick=()=>openRef(a.dataset.u));}
 
   // ---- history / saved ----
   function addHistory(rec){history.unshift({id:"h"+Date.now()+Math.floor(Math.random()*999),ts:now(),tsRaw:Date.now(),...rec});if(history.length>500)history.pop();persist();}
@@ -615,11 +771,13 @@ you were testing before you see the numbers.</pre></div>`;
     t.logId=e.id;   // notes typed in this tab attach to this run
     renderTabs();renderView();persist();
   }
-  async function doScan(){if(!invoke){status("Tauri bridge not available (open via the app).");return;}let t=cur();if(mode!=="tabs"||!t||t.kind!=="scan"||t.data){t=newTab("scan");}const sym=$("ticker").value.trim().toUpperCase();if(!sym)return;status(`Scanning <b>${sym}</b>…`);
+  async function doScan(){if(!hasBridge()){status("Tauri bridge not available (open via the app).");return;}let t=cur();if(mode!=="tabs"||!t||t.kind!=="scan"||t.data){t=newTab("scan");}const sym=$("ticker").value.trim().toUpperCase();if(!sym)return;status(`Scanning <b>${sym}</b>…`);
     try{await scanInto(t,sym);status("Done.");}catch(e){status("Error.");$("view").innerHTML=`<pre class="down">${escapeHtml(String(e))}</pre>`;}}
+  // Rescan a specific tab from its in-tab chip: make it active, then re-run in place.
+  async function rescanTab(t){active=t.id;setMode("tabs");renderTabs();renderView();await doRescan();}
   // Rescan — re-run THIS tab in place (same ticker/kind), appending a fresh log entry
   async function doRescan(){
-    if(!invoke){status("Tauri bridge not available.");return;}
+    if(!hasBridge()){status("Tauri bridge not available.");return;}
     const t=cur();
     if(mode!=="tabs"||!t){status("Open a result tab to rescan.");return;}
     if(t.kind==="scenario"){if(t.onboard){status("Finish setting up the scenario first.");return;}
@@ -634,7 +792,7 @@ you were testing before you see the numbers.</pre></div>`;
       status(`Rescanned <b>${sym}</b> — logged as a new run.`);
     }catch(e){status("Error.");$("view").innerHTML=`<pre class="down">${escapeHtml(String(e))}</pre>`;}
   }
-  async function doBacktest(){if(!invoke){status("Tauri bridge not available.");return;}let t=cur();if(mode!=="tabs"||!t||t.data){t=newTab("scan");}const sym=$("ticker").value.trim().toUpperCase();if(!sym)return;status(`Backtesting <b>${sym}</b>…`);
+  async function doBacktest(){if(!hasBridge()){status("Tauri bridge not available.");return;}let t=cur();if(mode!=="tabs"||!t||t.data){t=newTab("scan");}const sym=$("ticker").value.trim().toUpperCase();if(!sym)return;status(`Backtesting <b>${sym}</b>…`);
     try{await backtestInto(t,sym);status("Done.");}catch(e){status("Error.");$("view").innerHTML=`<pre class="down">${escapeHtml(String(e))}</pre>`;}}
   async function backtestInto(t,sym){
     const r=JSON.parse(await invoke("backtest",{ticker:sym,timeframe:$("tf").value}))[0];
@@ -648,18 +806,18 @@ you were testing before you see the numbers.</pre></div>`;
   function doScenario(){mode="tabs";Object.values(MODE_BTN).forEach(id=>{const b=$(id);if(b)b.classList.remove("primary");});newTab("scenario");status("New scenario — give it a ticker or an objective, then start.");}
   function doSaved(){setMode("saved");}
   function doLog(){setMode("log");}
-  async function doExport(){const t=cur();if(mode!=="tabs"){status("Switch to a result tab to export it.");return;}if(!t||!t.plain){status("Nothing to export in this tab.");return;}if(!invoke){status("Export needs the app.");return;}const base=(t.title||"stockscanner").replace(/[^a-z0-9]+/gi,"_").toLowerCase();const stamp=new Date().toISOString().slice(0,19).replace(/[:T]/g,"-");try{const path=await invoke("save_text",{filename:`${base}_${stamp}`,contents:t.plain,location:$("exportLoc").value});status(`Saved: <b>${path}</b>`);}catch(e){status("Export failed: "+e);}}
-  function toggleHelp(){helpOn=!helpOn;$("helpBtn").classList.toggle("primary",helpOn);renderView();persist();}
+  async function doExport(){const t=cur();if(mode!=="tabs"){status("Switch to a result tab to export it.");return;}if(!t||!t.plain){status("Nothing to export in this tab.");return;}if(!hasBridge()){status("Export needs the app.");return;}const base=(t.title||"stockscanner").replace(/[^a-z0-9]+/gi,"_").toLowerCase();const stamp=new Date().toISOString().slice(0,19).replace(/[:T]/g,"-");try{const path=await invoke("save_text",{filename:`${base}_${stamp}`,contents:t.plain,location:exportLoc});status(`Saved: <b>${path}</b>`);}catch(e){status("Export failed: "+e);}}
+  function toggleHelp(){helpOn=!helpOn;$("helpBtn").classList.toggle("primary",helpOn);document.body.classList.toggle("help-on",helpOn);renderView();persist();}
 
-  function toggleSplit(){setMode("split");}
-  function toggleOrient(){savedLayout=savedLayout==="vertical"?"horizontal":"vertical";$("orientBtn").innerHTML=(savedLayout==="vertical"?ic("layoutV"):ic("layoutH"));persist();renderView();}
-
-  $("scanBtn").onclick=doScan;$("rescanBtn").onclick=doRescan;$("btBtn").onclick=doBacktest;$("scenBtn").onclick=doScenario;$("logBtn").onclick=doLog;$("savedBtn").onclick=doSaved;$("exportBtn").onclick=doExport;$("helpBtn").onclick=toggleHelp;$("splitBtn").onclick=toggleSplit;$("orientBtn").onclick=toggleOrient;
+  $("scanBtn").onclick=doScan;$("btBtn").onclick=doBacktest;$("scenBtn").onclick=doScenario;$("logBtn").onclick=doLog;$("savedBtn").onclick=doSaved;$("exportBtn").onclick=doExport;$("helpBtn").onclick=toggleHelp;$("navBtn").onclick=toggleNav;
+  $("sbadd").onclick=()=>newTab("scan");
+  $("sbq").addEventListener("input",e=>{sbQuery=e.target.value;renderSidebar();});
+  { const b=$("sbNav"); if(b){ b.insertAdjacentHTML("afterbegin",ic("panel")); b.onclick=toggleNav; } }
   $("ticker").addEventListener("keydown",e=>{if(e.key==="Enter")doScan();});
   $("ticker").addEventListener("input",renderRefLinks);
 
   // ---- version / GitHub ----
-  const APP_VERSION="1.2.0";                       // bumped with each tagged release
+  const APP_VERSION="1.3.0";                       // bumped with each tagged release
   const GH_REPO="https://github.com/anthonyshafer/autoparts";
   const ghReleaseUrl=(v)=>`${GH_REPO}/releases/tag/v${v}`;
 
@@ -678,30 +836,56 @@ you were testing before you see the numbers.</pre></div>`;
     "menlo":['Menlo','"Menlo","Monaco",monospace'],
     "courier":['Courier','"Courier New",Courier,monospace'],
     "andale":['Andale Mono','"Andale Mono","Courier New",monospace'],
-    "pet":['PET / C64 (retro)','"C64 Pro Mono","PetMe64","PetMe","PetMe128","Px437 PET Me","Menlo",monospace'],
+    "dos":['DOS (IBM VGA)','"Perfect DOS VGA 437","Px437 IBM VGA8","PxPlus IBM VGA8","MorePerfectDOSVGA","IBM Plex Mono","Consolas",monospace'],
+    "pet":['PET / C64 (retro)','"C64 Pro Mono","PetMe64","PetMe","Px437 PET Me","Menlo",monospace'],
+    "c128":['C128 (thin, readable)','"PetMe128","PetMe1282Y","C64 Pro Mono","PetMe","Menlo",monospace'],
     "pet2y":['PET double-Y (retro)','"PetMe642Y","PetMe2Y","C64 Pro Mono","Menlo",monospace'],
   };
   const THEME_NAMES={amber:"Amber (Bloomberg)",c64:"Commodore 64",green:"Green phosphor",dark:"Dark modern",light:"Light"};
-  let prefFont="system",prefCols="normal";
-  function applyPrefs(){document.documentElement.style.setProperty("--app-font",FONTS[prefFont]?.[1]||FONTS.system[1]);document.body.classList.remove("col80","col120");if(prefCols!=="normal")document.body.classList.add(prefCols);}
-  function loadPrefs(){prefFont=localStorage.getItem("ss_font")||"system";prefCols=localStorage.getItem("ss_cols")||"normal";applyPrefs();}
-  function openPrefs(){
-    const pf=$("pfFont");pf.innerHTML=Object.entries(FONTS).map(([k,v])=>`<option value="${k}">${v[0]}</option>`).join("");pf.value=prefFont;
-    $("pfCols").value=prefCols;
+  let prefFont="system",prefCols="normal",prefSize="13.5",prefName="",prefWeight="400";
+  function applyPrefs(){
+    document.documentElement.style.setProperty("--app-font",FONTS[prefFont]?.[1]||FONTS.system[1]);
+    document.documentElement.style.setProperty("--app-size",prefSize+"px");
+    document.documentElement.style.setProperty("--app-weight",prefWeight);
+    document.body.classList.remove("col80","col120");if(prefCols!=="normal")document.body.classList.add(prefCols);
+  }
+  function loadPrefs(){prefFont=localStorage.getItem("ss_font")||"system";prefCols=localStorage.getItem("ss_cols")||"normal";prefSize=localStorage.getItem("ss_size")||"13.5";prefName=localStorage.getItem("ss_name")||"";prefWeight=localStorage.getItem("ss_weight")||"400";applyPrefs();}
+  function openProfile(){
+    $("pfName").value=prefName;
+    // each font option is rendered IN its own typeface
+    const pf=$("pfFont");pf.innerHTML=Object.entries(FONTS).map(([k,v])=>`<option value="${k}" style="font-family:${v[1]}">${v[0]}</option>`).join("");pf.value=prefFont;
+    pf.style.fontFamily=FONTS[prefFont][1];
+    $("pfSize").value=prefSize;$("pfCols").value=prefCols;$("pfWeight").value=prefWeight;
     const pt=$("pfTheme");pt.innerHTML=Object.entries(THEME_NAMES).map(([k,v])=>`<option value="${k}">${v}</option>`).join("");pt.value=$("theme").value;
-    const upd=()=>{const prev=$("pfPreview");prev.style.fontFamily=FONTS[pf.value][1];prev.setAttribute("data-c",$("pfCols").value);};
-    pf.onchange=upd;$("pfCols").onchange=upd;pt.onchange=()=>{document.body.setAttribute("data-theme",pt.value);$("theme").value=pt.value;};
+    const upd=()=>{const prev=$("pfPreview");prev.style.fontFamily=FONTS[pf.value][1];prev.style.fontSize=$("pfSize").value+"px";prev.style.fontWeight=$("pfWeight").value;pf.style.fontFamily=FONTS[pf.value][1];$("pfSizeV").textContent=$("pfSize").value+"px";};
+    pf.onchange=upd;$("pfSize").oninput=upd;$("pfWeight").onchange=upd;$("pfCols").onchange=upd;pt.onchange=()=>{document.body.setAttribute("data-theme",pt.value);$("theme").value=pt.value;};
     upd();$("prefsOverlay").classList.add("show");
   }
-  $("prefsBtn").onclick=openPrefs;
+  $("profileBtn").onclick=openProfile;
   $("pfClose").onclick=()=>$("prefsOverlay").classList.remove("show");
   $("prefsOverlay").onclick=(e)=>{if(e.target.id==="prefsOverlay")$("prefsOverlay").classList.remove("show");};
-  $("pfSave").onclick=()=>{prefFont=$("pfFont").value;prefCols=$("pfCols").value;const th=$("pfTheme").value;localStorage.setItem("ss_font",prefFont);localStorage.setItem("ss_cols",prefCols);$("theme").value=th;document.body.setAttribute("data-theme",th);applyPrefs();persist();$("prefsOverlay").classList.remove("show");status("Preferences saved as default.");};
-  $("pfReset").onclick=()=>{prefFont="system";prefCols="normal";localStorage.removeItem("ss_font");localStorage.removeItem("ss_cols");applyPrefs();openPrefs();status("Preferences reset to defaults.");};
+  $("pfSave").onclick=()=>{prefFont=$("pfFont").value;prefCols=$("pfCols").value;prefSize=$("pfSize").value;prefWeight=$("pfWeight").value;prefName=$("pfName").value.trim();const th=$("pfTheme").value;
+    localStorage.setItem("ss_font",prefFont);localStorage.setItem("ss_cols",prefCols);localStorage.setItem("ss_size",prefSize);localStorage.setItem("ss_weight",prefWeight);localStorage.setItem("ss_name",prefName);
+    $("theme").value=th;document.body.setAttribute("data-theme",th);applyPrefs();persist();$("prefsOverlay").classList.remove("show");status(prefName?`Saved. Hi, ${escapeHtml(prefName)}.`:"Profile saved.");};
+  $("pfReset").onclick=()=>{prefFont="system";prefCols="normal";prefSize="13.5";prefWeight="400";["ss_font","ss_cols","ss_size","ss_weight"].forEach(k=>localStorage.removeItem(k));applyPrefs();openProfile();status("Options reset to defaults.");};
   loadPrefs();
 
-  $("orientBtn").innerHTML=(savedLayout==="vertical"?ic("layoutV"):ic("layoutH"));
-  if(restore()){$("orientBtn").innerHTML=(savedLayout==="vertical"?ic("layoutV"):ic("layoutH"));renderTabs();if(helpOn)$("helpBtn").classList.add("primary");renderView();}else{newTab("scan");}
+  // ---- export location menu (Downloads / Desktop / Choose Folder — remembered) ----
+  let exportLoc=localStorage.getItem("ss_exportLoc")||"downloads";
+  function locLabel(){return exportLoc==="downloads"?"Downloads":exportLoc==="desktop"?"Desktop":exportLoc;}
+  function markMenu(){document.querySelectorAll("#exportMenu .mi").forEach(m=>m.classList.toggle("on",m.dataset.loc===exportLoc));$("exportBtn").title="Export .txt → "+locLabel();}
+  $("exportCaret").onclick=(e)=>{e.stopPropagation();const m=$("exportMenu"),r=$("exportCaret").getBoundingClientRect();m.style.left=Math.min(r.left,innerWidth-170)+"px";m.style.top=r.bottom+4+"px";markMenu();m.classList.toggle("show");};
+  document.querySelectorAll("#exportMenu .mi").forEach(mi=>mi.onclick=async()=>{
+    $("exportMenu").classList.remove("show");
+    if(mi.dataset.loc==="__choose__"){
+      if(!hasBridge()){status("Folder picker needs the app.");return;}
+      try{const p=await invoke("choose_folder");if(p){exportLoc=p;localStorage.setItem("ss_exportLoc",p);markMenu();status("Export folder: <b>"+escapeHtml(p)+"</b>");}}catch(e){status("Picker failed: "+e);}
+    }else{exportLoc=mi.dataset.loc;localStorage.setItem("ss_exportLoc",exportLoc);markMenu();status("Export location: <b>"+locLabel()+"</b>");}
+  });
+  document.addEventListener("mousedown",(e)=>{if(!$("exportMenu").contains(e.target)&&e.target.id!=="exportCaret"&&!e.target.closest("#exportCaret"))$("exportMenu").classList.remove("show");});
+  markMenu();
+
+  if(restore()){applyNav();renderTabs();if(helpOn){$("helpBtn").classList.add("primary");document.body.classList.add("help-on");}renderView();}else{applyNav();newTab("scan");}
 </script>
 </body>
 </html>

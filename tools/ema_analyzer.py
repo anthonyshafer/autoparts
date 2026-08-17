@@ -243,7 +243,20 @@ def main() -> None:
     p.add_argument("--json", action="store_true")
     args = p.parse_args()
     a = analyze(args.ticker, timeframe=args.timeframe)
-    print(json.dumps(asdict(a), indent=2, default=float) if args.json else render(a, args.amount))
+    if args.json:
+        # JSON has no Infinity/NaN literal; emit null for non-finite (e.g. an infinite PE)
+        # so the desktop UI can JSON.parse the output.
+        def _san(o):
+            if isinstance(o, float):
+                return o if np.isfinite(o) else None
+            if isinstance(o, dict):
+                return {k: _san(v) for k, v in o.items()}
+            if isinstance(o, list):
+                return [_san(v) for v in o]
+            return o
+        print(json.dumps(_san(asdict(a)), indent=2, default=float, allow_nan=False))
+    else:
+        print(render(a, args.amount))
 
 
 if __name__ == "__main__":
