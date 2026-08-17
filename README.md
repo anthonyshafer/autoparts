@@ -1,9 +1,9 @@
 # Stocks — EMA Reversal System
 
-A command-line tool that formalizes the **9 / 20 / 200 EMA reversal** strategy:
-buy a stock while it's **discounted** (below its 200-week EMA) but only *after* price
-**reclaims the 9 & 20 EMA** (the reversal is "locked in"), targeting the 200 EMA as the
-take-profit / expected rejection.
+A **swing / position trading** tool (multi-week-to-multi-month horizon — *not* day trading)
+that formalizes the **9 / 20 / 200 EMA reversal** strategy: buy a stock while it's
+**discounted** (below its 200-week EMA) but only *after* price **reclaims the 9 & 20 EMA**
+(the reversal is "locked in"), targeting the 200 EMA as the take-profit / expected rejection.
 
 > **Read this first.** This is *decision support* built from indicator rules — a
 > disciplined checklist and level calculator. It is **not** a prediction oracle, **not**
