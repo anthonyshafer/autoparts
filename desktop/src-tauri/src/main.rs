@@ -8,6 +8,7 @@
 // mac-only POC: assumes `python3` (or a venv) with the deps is available on PATH.
 
 mod engine;
+mod fetch;
 
 use std::path::PathBuf;
 use std::process::Command;
@@ -238,6 +239,29 @@ fn main() {
         let csv = args.get(pos + 1).expect("--scan-parity needs a csv path");
         let mkt = args.get(pos + 2).map(|s| s == "1").unwrap_or(true);
         run_scan_parity(csv, mkt);
+        return;
+    }
+    // Live fetch + scan (Rust end-to-end): `stockscanner --fetch-scan <TICKER> <weekly|daily>`
+    if let Some(pos) = args.iter().position(|a| a == "--fetch-scan") {
+        let ticker = args.get(pos + 1).expect("--fetch-scan needs a ticker");
+        let tf = args.get(pos + 2).map(|s| s.as_str()).unwrap_or("weekly");
+        match fetch::fetch(ticker, tf) {
+            Ok(d) if d.len() >= 60 => {
+                let mkt = fetch::market_ok(tf);
+                let r = engine::scan_frame(&d, mkt, 0.005);
+                let jf = |x: f64| if x.is_finite() { format!("{:.4}", x) } else { "null".to_string() };
+                let arr = |v: &Vec<f64>| { let s: Vec<String> = v.iter().map(|x| format!("{:.2}", x)).collect(); format!("[{}]", s.join(",")) };
+                let esc = |s: &str| s.replace('\\', "\\\\").replace('"', "\\\"");
+                println!(
+                    "{{\"ticker\":\"{}\",\"regime\":\"{}\",\"verdict\":\"{}\",\"setup_quality\":\"{}\",\"entry\":{},\"take_profit\":{},\"stop_loss\":{},\"upside_pct\":{},\"downside_pct\":{},\"r_multiple\":{},\"ema9\":{},\"ema20\":{},\"ema200\":{},\"rsi\":{},\"atr\":{},\"rejection_zones\":{},\"support\":{},\"bars\":{}}}",
+                    ticker.to_uppercase(), esc(&r.regime), esc(&r.verdict), r.setup_quality, jf(r.entry),
+                    jf(r.take_profit), jf(r.stop_loss), jf(r.upside_pct), jf(r.downside_pct), jf(r.r_multiple),
+                    jf(r.ema9), jf(r.ema20), jf(r.ema200), jf(r.rsi), jf(r.atr), arr(&r.rejection_zones), arr(&r.support), d.len(),
+                );
+            }
+            Ok(d) => eprintln!("only {} bars for {ticker}", d.len()),
+            Err(e) => eprintln!("{e}"),
+        }
         return;
     }
     tauri::Builder::default()
