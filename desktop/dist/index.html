@@ -89,7 +89,7 @@
   #sidebar .sbitem.active{background:color-mix(in srgb, var(--tabc,#666) 34%, var(--panel2));
     border-color:color-mix(in srgb, var(--tabc,#666) 65%, transparent);}
   #sidebar .sbitem .dot{width:9px;height:9px;border-radius:3px;background:var(--tabc,#666);margin-top:3px;flex:0 0 auto;}
-  #sidebar .sbitem .meta{flex:1;min-width:0;}
+  #sidebar .sbitem .meta{flex:1;min-width:0;display:flex;flex-direction:column;}
   #sidebar .sbitem .t{color:var(--hi);font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   #sidebar .sbitem .s{color:var(--dim);font-size:10px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.4px;}
   #sidebar .sbitem .x{opacity:0;width:16px;height:16px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;color:var(--dim);}
@@ -119,11 +119,13 @@
   tbody td.val{color:var(--hi);font-weight:600;}
   tbody tr:hover{background:var(--rowhover);}
   tbody tr.sel{background:var(--sel);box-shadow:inset 2px 0 0 var(--accent);}
-  /* scenario layout: GRID = sliders 2-3 across + results row; STACKED = single column */
-  .scenwrap.scen-grid .sliders{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:12px;margin-bottom:16px;}
-  .scenwrap.scen-grid .kpi{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));}
+  /* scenario: COLUMNS = sliders left | results right; STACKED = sliders top / results bottom.
+     Sliders are always one per row within their pane. */
+  .scenwrap.scen-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+  .scenwrap.scen-cols .sliders{display:flex;flex-direction:column;gap:10px;margin:0;}
+  .scenwrap.scen-cols .kpi{grid-template-columns:1fr 1fr;}
   .scenwrap.scen-stack .sliders{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
-  .scenwrap.scen-stack .kpi{grid-template-columns:1fr;}
+  .scenwrap.scen-stack .kpi{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));}
   .sliders .slider{width:100%;}
   .slider{border:1px solid var(--grid);border-left:2px solid var(--grid);padding:10px 12px;background:var(--panel);}
   .slider.locked{border-left-color:var(--accent);}
@@ -381,7 +383,7 @@
     tickerLogs=JSON.parse(localStorage.getItem("ss_tickerLogs")||"{}");
     tabLayout=localStorage.getItem("ss_tabLayout")||"top";
     const t=JSON.parse(localStorage.getItem("ss_tabs")||"[]");
-    if(t.length){tabs=t;seq=Math.max(...tabs.map(x=>+x.id.slice(1)),0);active=tabs[0].id;return true;}
+    if(t.length){t.forEach(x=>{if(x.title==="(empty)")x.title="New";});tabs=t;seq=Math.max(...tabs.map(x=>+x.id.slice(1)),0);active=tabs[0].id;return true;}
   }catch(e){}return false;}
 
   // ---- per-ticker local log -------------------------------------------------
@@ -532,13 +534,24 @@
     return "NEW";
   }
   function subtitleOf(t){
+    if(!t.data&&t.kind!=="scenario")return "new tab";   // not run yet — no misleading "scan"
     const bits=[t.kind];
     if(t.kind==="scenario"&&t.objective)bits.push(t.objective.slice(0,34));
     if(t.ts)bits.push(t.ts.replace(/:\d\d\s/," ").replace(/,/,""));
     if(t.notes&&t.notes.trim())bits.push("• noted");
     return bits.join(" · ");
   }
-  const sbItemHTML=(t)=>`<div class="sbitem ${t.id===active&&mode==="tabs"?"active":""}" data-id="${t.id}" style="--tabc:${t.color}">
+  function sbTip(t){
+    const L=[t.title];
+    L.push("Type: "+t.kind);
+    if(t.ticker)L.push("Ticker: "+t.ticker);
+    if(t.data&&t.data.verdict)L.push("Verdict: "+t.data.verdict);
+    if(t.data&&t.data.price!=null)L.push("Price: "+t.data.price);
+    if(t.ts)L.push("Run: "+t.ts);
+    if(t.notes&&t.notes.trim())L.push("Notes: "+t.notes.trim().slice(0,120));
+    return L.join("\n");
+  }
+  const sbItemHTML=(t)=>`<div class="sbitem ${t.id===active&&mode==="tabs"?"active":""}" data-id="${t.id}" style="--tabc:${t.color}" title="${escapeHtml(sbTip(t))}">
        <span class="dot"></span>
        <span class="meta"><span class="t">${escapeHtml(t.title)}</span><span class="s">${escapeHtml(subtitleOf(t))}</span></span>
        <span class="x" title="Close">${ic("close")}</span></div>`;
@@ -608,9 +621,9 @@
         <button class="mini" id="rst_${id}" title="Reset this slider">${ic("reset")}</button></span></div>
       <input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${s[id]}"></div>`;};
     return `<div class="scenbar"><button id="resetAll">${ic("resetAll")}Reset all</button><button id="snapSave">${ic("save")}Save snapshot</button>
-        <button id="scenLayoutBtn" title="Toggle grid / stacked layout">${(t.scenLayout||"grid")==="stack"?ic("layoutV"):ic("layoutH")}${(t.scenLayout||"grid")==="stack"?"Stacked":"Grid"}</button>
+        <button id="scenLayoutBtn" title="Toggle columns / stacked">${(t.scenLayout||"cols")==="stack"?ic("layoutV"):ic("layoutH")}${(t.scenLayout||"cols")==="stack"?"Stacked":"Columns"}</button>
         <span class="ts" id="scents">${t.ts?("Last run: "+t.ts):"not run yet"}</span></div>
-      <div class="scenwrap scen-${t.scenLayout||"grid"}">
+      <div class="scenwrap scen-${t.scenLayout||"cols"}">
         <div class="sliders">${SLIDERS.map(one).join("")}</div>
         <div class="scenres"><div class="kpi" id="scenkpi"></div><pre id="scenout" class="dim"></pre></div>
       </div>`;}
@@ -620,7 +633,7 @@
       $("rst_"+id).onclick=()=>{t.scen[id]=SCEN_DEFAULTS[id];renderView();recalcScenario(t,true);};});
     $("resetAll").onclick=()=>{t.scen={...SCEN_DEFAULTS};t.locks={};renderView();recalcScenario(t,true);};
     $("snapSave").onclick=()=>{addHistory({ticker:"SCENARIO",kind:"scenario",title:t.title,plain:t.plain});status("Snapshot saved to <b>Saved</b>.");};
-    const lb=$("scenLayoutBtn");if(lb)lb.onclick=()=>{t.scenLayout=((t.scenLayout||"grid")==="stack")?"grid":"stack";renderView();persist();};}
+    const lb=$("scenLayoutBtn");if(lb)lb.onclick=()=>{t.scenLayout=((t.scenLayout||"cols")==="stack")?"cols":"stack";renderView();persist();};}
   const mulberry32=(a)=>()=>{a|=0;a=a+0x6D2B79F5|0;let x=Math.imul(a^a>>>15,1|a);x=x+Math.imul(x^x>>>7,61|x)^x;return((x^x>>>14)>>>0)/4294967296;};
   function recalcScenario(t,stamp){const s=t.scen;const rng=mulberry32(12345);
     const jit=(id,base,amt)=>t.locks[id]?base:base*(1+(rng()-0.5)*amt);
@@ -812,7 +825,7 @@ you were testing before you see the numbers.</pre></div>`;
   $("scanBtn").onclick=doScan;$("btBtn").onclick=doBacktest;$("scenBtn").onclick=doScenario;$("logBtn").onclick=doLog;$("savedBtn").onclick=doSaved;$("exportBtn").onclick=doExport;$("helpBtn").onclick=toggleHelp;$("navBtn").onclick=toggleNav;
   $("sbadd").onclick=()=>newTab("scan");
   $("sbq").addEventListener("input",e=>{sbQuery=e.target.value;renderSidebar();});
-  { const b=$("sbNav"); if(b){ b.insertAdjacentHTML("afterbegin",ic("panel")); b.onclick=toggleNav; } }
+  { const b=$("sbNav"); if(b) b.onclick=toggleNav; }   // icon injected via data-i; just wire the click
   $("ticker").addEventListener("keydown",e=>{if(e.key==="Enter")doScan();});
   $("ticker").addEventListener("input",renderRefLinks);
 
