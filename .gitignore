@@ -1,11 +1,17 @@
+# python
 .venv/
+.venv_gui/
 __pycache__/
 *.pyc
 .env
 .env.*
+# os
 .DS_Store
-data/
-build/
-dist/
+# root-level python build outputs only (NOT desktop/dist)
+/dist/
+/build/
 *.spec.bak
-# journal: track logged calls
+# tauri / rust build artifacts
+desktop/src-tauri/target/
+# node
+node_modules/

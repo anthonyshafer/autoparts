@@ -213,7 +213,17 @@ def main() -> None:
 
     results = [backtest(t, args.timeframe, args.atr_mult, args.max_hold) for t in args.tickers]
     if args.json:
-        print(json.dumps([asdict(r) for r in results], indent=2, default=float))
+        # JSON has no Infinity/NaN literal; emit null for non-finite so JS can parse it.
+        def _san(o):
+            if isinstance(o, float):
+                return o if np.isfinite(o) else None
+            if isinstance(o, dict):
+                return {k: _san(v) for k, v in o.items()}
+            if isinstance(o, list):
+                return [_san(v) for v in o]
+            return o
+        print(json.dumps([_san(asdict(r)) for r in results], indent=2, default=float,
+                         allow_nan=False))
     else:
         print("\n\n".join(render(r) for r in results))
         if len(results) > 1:

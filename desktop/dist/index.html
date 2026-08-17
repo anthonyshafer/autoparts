@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>StockScanner</title>
+<style>
+  /* Bloomberg-style hierarchy: light-gray body text, WHITE key figures, AMBER accents,
+     green/red data, thin gridlines. Amber is an accent, not the body color. */
+  :root{
+    --bg:#000;--panel:#0c0c0c;--panel2:#131313;--fg:#c8c8c8;--dim:#7d7d7d;--hi:#ffffff;
+    --accent:#ff9f1c;--accent2:#ffb84d;--field:#181818;--field-fg:#eaeaea;
+    --up:#33d17a;--down:#ff5c5c;--warn:#ffcf40;--grid:#242424;--rowhover:#161616;--sel:#241d0e;
+  }
+  [data-theme="green"]{--bg:#000900;--panel:#001200;--panel2:#001a00;--fg:#b8ffcf;--dim:#4e9e68;--hi:#eaffef;--accent:#00e676;--accent2:#5affa0;--field:#002200;--field-fg:#d6ffe2;--up:#00e676;--down:#ff6b6b;--warn:#c8ff4d;--grid:#0c3a1a;--rowhover:#031a08;--sel:#06280f;}
+  [data-theme="dark"]{--bg:#12151c;--panel:#171b23;--panel2:#1d222c;--fg:#c3c9d5;--dim:#7b8494;--hi:#ffffff;--accent:#4aa3ff;--accent2:#7dbcff;--field:#232a36;--field-fg:#eef2f8;--up:#26de81;--down:#fc5c65;--warn:#fed330;--grid:#2b323e;--rowhover:#1b212b;--sel:#1d2937;}
+  [data-theme="light"]{--bg:#eceef1;--panel:#fff;--panel2:#f6f7f9;--fg:#2a2f36;--dim:#6b7280;--hi:#000;--accent:#b45309;--accent2:#d97706;--field:#fff;--field-fg:#111;--up:#0a8a2a;--down:#c0271a;--warn:#a86910;--grid:#dcdfe4;--rowhover:#f0f2f5;--sel:#fdf2df;}
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  body{background:var(--bg);color:var(--fg);font-family:"SF Mono","Menlo","Consolas",monospace;font-size:13px;display:flex;flex-direction:column;height:100vh;font-variant-numeric:tabular-nums;}
+  svg{width:15px;height:15px;display:block;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
+  header{display:flex;gap:8px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--grid);flex-wrap:wrap;background:var(--panel);}
+  .brand{display:flex;align-items:center;gap:7px;color:var(--accent);font-weight:700;letter-spacing:2px;font-size:13px;margin-right:6px;}
+  .brand svg{width:16px;height:16px;stroke:var(--accent);}
+  label{color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:1.5px;}
+  input,select{background:var(--field);color:var(--field-fg);border:1px solid var(--grid);padding:6px 8px;font-family:inherit;font-size:13px;border-radius:2px;}
+  input#ticker{width:82px;text-transform:uppercase;letter-spacing:2px;color:var(--hi);font-weight:700;}
+  button{display:inline-flex;align-items:center;gap:6px;background:var(--field);color:var(--fg);border:1px solid var(--grid);padding:6px 11px;font-family:inherit;font-weight:600;letter-spacing:1px;cursor:pointer;border-radius:2px;text-transform:uppercase;font-size:11px;}
+  button:hover{border-color:var(--accent);color:var(--hi);}
+  button.icon{padding:6px 7px;}
+  button.primary{background:var(--accent);color:#000;border-color:var(--accent);}
+  button.primary:hover{background:var(--accent2);color:#000;}
+  .spacer{flex:1;}
+  /* tab bar — Warp-style: solid full-height colored tabs, active brighter with close chip */
+  .tabs{display:flex;gap:3px;align-items:stretch;padding:4px 8px;border-bottom:1px solid var(--grid);overflow-x:auto;background:var(--bg);min-height:38px;}
+  .tab{display:flex;align-items:center;gap:9px;padding:0 14px;border-radius:7px;cursor:pointer;white-space:nowrap;color:var(--fg);font-size:12px;letter-spacing:.3px;border:1px solid transparent;
+    background:color-mix(in srgb, var(--tabc,#666) 16%, var(--panel));}
+  .tab:hover{background:color-mix(in srgb, var(--tabc,#666) 26%, var(--panel));}
+  .tab.active{color:#fff;font-weight:600;background:color-mix(in srgb, var(--tabc,#666) 46%, var(--panel));border-color:color-mix(in srgb, var(--tabc,#666) 70%, transparent);}
+  .tab .glyph{width:10px;height:10px;border-radius:3px;flex:0 0 auto;background:var(--tabc,#666);opacity:.9;}
+  .tab.active .glyph{display:none;}
+  .tab .x{display:none;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;background:rgba(255,255,255,.14);}
+  .tab.active .x,.tab:hover .x{display:flex;} .tab .x:hover{background:var(--down);color:#fff;}
+  .tab .x svg{width:11px;height:11px;}
+  .tab.addtab{color:var(--accent);padding:0 12px;background:transparent;font-size:16px;}
+  .tab.addtab:hover{background:var(--panel2);}
+  #status{padding:5px 12px;font-size:11px;color:var(--dim);border-bottom:1px solid var(--grid);background:var(--panel);}
+  #status b{color:var(--accent);font-weight:600;}
+  .body{flex:1;display:flex;min-height:0;}
+  main{flex:1;overflow:auto;padding:14px;min-width:0;}
+  aside#help{width:290px;flex:0 0 290px;border-left:1px solid var(--grid);background:var(--panel);overflow:auto;padding:14px;display:none;}
+  aside#help.show{display:block;}
+  aside#help h3{color:var(--accent);font-size:11px;text-transform:uppercase;letter-spacing:2px;margin:0 0 10px;border-bottom:1px solid var(--grid);padding-bottom:6px;}
+  aside#help dl{margin:0 0 16px;} aside#help dt{color:var(--hi);font-weight:700;margin-top:10px;font-size:12px;}
+  aside#help dd{margin:2px 0 0;color:var(--dim);font-size:12px;line-height:1.5;}
+  pre{margin:0;white-space:pre-wrap;line-height:1.55;color:var(--fg);}
+  .up{color:var(--up);}.down{color:var(--down);}.warn{color:var(--warn);}.dim{color:var(--dim);}.hi{color:var(--hi);}
+  /* KPI grid */
+  .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:8px;margin-bottom:16px;}
+  .cell{border:1px solid var(--grid);border-left:2px solid var(--accent);padding:9px 11px;background:var(--panel);}
+  .cell .k{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);}
+  .cell .v{font-size:19px;font-weight:700;margin-top:5px;color:var(--hi);}
+  .cell .v.up{color:var(--up);}.cell .v.down{color:var(--down);}.cell .v.warn{color:var(--warn);}
+  /* Bloomberg data tables */
+  .dtwrap{border:1px solid var(--grid);}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  thead th{color:var(--dim);text-align:left;padding:7px 12px;text-transform:uppercase;font-size:10px;letter-spacing:1.5px;font-weight:600;border-bottom:1px solid var(--grid);background:var(--panel2);position:sticky;top:0;cursor:pointer;user-select:none;}
+  thead th.num,tbody td.num{text-align:right;font-variant-numeric:tabular-nums;}
+  tbody td{padding:6px 12px;border-bottom:1px solid var(--grid);color:var(--fg);}
+  tbody td.lbl{color:var(--dim);text-transform:uppercase;font-size:10px;letter-spacing:1px;}
+  tbody td.val{color:var(--hi);font-weight:600;}
+  tbody tr:hover{background:var(--rowhover);}
+  tbody tr.sel{background:var(--sel);box-shadow:inset 2px 0 0 var(--accent);}
+  /* sliders — ALWAYS one per row (stacked vertically). The range inputs are horizontal
+     controls; letting them flow into columns made them read as side-by-side scroll bars. */
+  .sliders{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
+  .sliders .slider{width:100%;}
+  .slider{border:1px solid var(--grid);border-left:2px solid var(--grid);padding:10px 12px;background:var(--panel);}
+  .slider.locked{border-left-color:var(--accent);}
+  .slider .row{display:flex;justify-content:space-between;align-items:center;gap:6px;}
+  .slider .lab{color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:1.5px;}
+  .slider .ctl{display:flex;gap:4px;align-items:center;}
+  .slider .val{color:var(--hi);font-weight:700;font-size:14px;min-width:52px;text-align:right;}
+  .slider .mini{padding:3px 5px;border:1px solid var(--grid);background:var(--field);}
+  .slider .mini:hover{border-color:var(--accent);}
+  .slider .mini.on{border-color:var(--accent);color:var(--accent);}
+  .slider input[type=range]{width:100%;accent-color:var(--accent);margin-top:8px;}
+  .scenbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
+  .ts{font-size:11px;color:var(--dim);}
+  /* context menu */
+  #ctx{position:fixed;z-index:60;background:var(--panel);border:1px solid var(--accent);border-radius:3px;padding:8px;display:none;box-shadow:0 6px 20px rgba(0,0,0,.6);}
+  #ctx .swatches{display:grid;grid-template-columns:repeat(6,20px);gap:5px;margin-bottom:8px;}
+  #ctx .sw{width:20px;height:20px;border-radius:3px;cursor:pointer;border:1px solid #0008;}
+  #ctx .mi{padding:6px 8px;cursor:pointer;font-size:11px;text-transform:uppercase;letter-spacing:1px;display:flex;gap:8px;align-items:center;color:var(--fg);}
+  #ctx .mi:hover{background:var(--accent);color:#000;}
+  .saved{display:flex;gap:12px;height:100%;} .saved.vertical{flex-direction:column;}
+  .saved .list,.saved .viewer{flex:1;overflow:auto;border:1px solid var(--grid);}
+  .saved .viewer{padding:12px;background:var(--panel);}
+  .savedctrl{display:flex;gap:8px;margin-bottom:10px;align-items:center;}
+  footer{padding:7px 12px;font-size:10px;color:var(--dim);border-top:1px solid var(--grid);background:var(--panel);}
+  .brand{cursor:pointer;}
+  #aboutOverlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:80;}
+  #aboutOverlay.show{display:flex;}
+  #aboutBox{background:var(--panel);border:1px solid var(--accent);border-radius:6px;padding:26px 30px;max-width:420px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.6);}
+  #aboutBox .ab-brand{display:flex;align-items:center;justify-content:center;gap:9px;color:var(--accent);font-weight:700;letter-spacing:3px;font-size:16px;}
+  #aboutBox .ab-brand svg{width:22px;height:22px;stroke:var(--accent);}
+  #aboutBox .ab-sub{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:2px;margin-top:6px;}
+  #aboutBox .ab-tag{color:var(--hi);font-size:14px;line-height:1.7;margin:18px 0;}
+  #aboutBox .ab-tag b{color:var(--accent);letter-spacing:1px;}
+  #aboutBox .ab-link{color:var(--accent);cursor:pointer;text-decoration:underline;}
+  #aboutBox .ab-note{color:var(--dim);font-size:11px;line-height:1.5;margin-bottom:12px;}
+  #aboutBox .ab-ver{color:var(--dim);font-size:11px;margin-bottom:16px;letter-spacing:1px;}
+  #aboutBox button{margin:0 auto;}
+  /* empty-tab canvas: pick what the tab holds */
+  .empty-canvas{max-width:520px;margin:26px auto 20px;border:1px solid var(--grid);border-left:2px solid var(--accent);border-radius:4px;padding:22px 24px;background:var(--panel);}
+  .empty-canvas .ec-title{color:var(--accent);font-size:12px;letter-spacing:2px;text-transform:uppercase;font-weight:700;}
+  .empty-canvas .ec-sub{color:var(--dim);font-size:11px;margin-top:4px;text-transform:uppercase;letter-spacing:1.5px;}
+  .empty-canvas .ec-row{display:flex;gap:10px;margin:16px 0;}
+  .empty-canvas .ec-row input{flex:1;text-transform:uppercase;letter-spacing:2px;color:var(--hi);font-weight:700;}
+  .empty-canvas .ec-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .empty-canvas .ec-opts button{justify-content:center;flex-direction:column;gap:7px;padding:16px 8px;font-size:11px;}
+  .empty-canvas .ec-opts button svg{width:20px;height:20px;}
+  .empty-canvas .ec-opts button:hover{background:var(--accent);color:#000;}
+  /* per-tab notes */
+  .notes{margin-top:16px;border:1px solid var(--grid);border-left:2px solid var(--accent);background:var(--panel);}
+  .notes .nh{display:flex;align-items:center;gap:8px;padding:6px 11px;border-bottom:1px solid var(--grid);}
+  .notes .nh .k{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);flex:1;}
+  .notes .nh .saved{font-size:10px;color:var(--up);opacity:0;transition:opacity .2s;}
+  .notes .nh .saved.on{opacity:1;}
+  .notes textarea{width:100%;min-height:90px;resize:vertical;background:var(--field);color:var(--field-fg);
+    border:0;padding:10px 11px;font-family:inherit;font-size:12px;line-height:1.55;display:block;}
+  .notes textarea:focus{outline:1px solid var(--accent);outline-offset:-1px;}
+  /* ticker log */
+  .logwrap{display:flex;gap:12px;height:100%;} .logwrap.vertical{flex-direction:column;}
+  .logwrap .list,.logwrap .viewer{flex:1;overflow:auto;border:1px solid var(--grid);}
+  .logwrap .viewer{padding:12px;background:var(--panel);}
+  .tickerhdr{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center;}
+  .tchip{padding:4px 10px;border:1px solid var(--grid);background:var(--panel);cursor:pointer;border-radius:3px;
+    font-size:11px;letter-spacing:1px;color:var(--fg);font-weight:700;}
+  .tchip:hover{border-color:var(--accent);color:var(--hi);}
+  .tchip.on{background:var(--accent);color:#000;border-color:var(--accent);}
+  .tchip .n{opacity:.7;font-weight:400;margin-left:5px;}
+  .logentry{border-bottom:1px solid var(--grid);padding:9px 11px;}
+  .logentry .lt{color:var(--dim);font-size:10px;letter-spacing:1px;text-transform:uppercase;}
+  .logentry .ln{color:var(--fg);font-size:12px;margin-top:4px;white-space:pre-wrap;line-height:1.5;}
+  .logentry .ln.empty{color:var(--dim);font-style:italic;}
+  /* reference links */
+  .reflinks{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:6px 12px;border-top:1px solid var(--grid);background:var(--panel2);}
+  .reflinks .rl{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border:1px solid var(--grid);
+    background:var(--field);color:var(--fg);font-size:10px;text-transform:uppercase;letter-spacing:1px;
+    cursor:pointer;border-radius:2px;font-weight:600;}
+  .reflinks .rl:hover{border-color:var(--accent);color:var(--hi);}
+  .reflinks .rl svg{width:11px;height:11px;}
+  .reflinks .lbl{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);margin-right:2px;}
+</style>
+</head>
+<body data-theme="amber">
+  <header>
+    <span class="brand"><svg viewBox="0 0 32 32"><rect x="2.5" y="2.5" width="27" height="27" rx="7"/><text x="16" y="13.5" text-anchor="middle" font-family="Menlo,Consolas,monospace" font-weight="700" font-size="11" letter-spacing="-.5" fill="currentColor" stroke="none">SS</text><line x1="9" y1="22" x2="9" y2="27"/><rect x="7.6" y="22.5" width="2.8" height="4" rx=".8"/><line x1="16" y1="18" x2="16" y2="27"/><rect x="14.6" y="20" width="2.8" height="5.5" rx=".8"/><line x1="23" y1="15" x2="23" y2="26"/><rect x="21.6" y="16.5" width="2.8" height="7" rx=".8"/></svg>STOCKSCANNER</span>
+    <label>Ticker</label><input id="ticker" value="BSX" />
+    <select id="tf"><option>weekly</option><option>daily</option></select>
+    <button id="scanBtn" class="primary" data-i="search">Scan</button>
+    <button id="rescanBtn" data-i="reset" title="Re-run this tab's scan/backtest in place">Rescan</button>
+    <button id="btBtn" data-i="chart">Backtest</button>
+    <button id="scenBtn" data-i="sliders">Scenario</button>
+    <button id="logBtn" data-i="book" title="Per-ticker scan log with notes">Log</button>
+    <button id="savedBtn" data-i="table">Saved</button>
+    <span class="spacer"></span>
+    <button id="splitBtn" class="icon" data-i="table" title="List/pane view of all tabs"></button>
+    <button id="orientBtn" class="icon" data-i="layoutH" title="Toggle split orientation"></button>
+    <button id="helpBtn" class="icon" data-i="help" title="Toggle help panel"></button>
+    <button id="exportBtn" class="icon" data-i="download" title="Export plain .txt"></button>
+    <select id="exportLoc" title="Export location"><option value="downloads">Downloads</option><option value="desktop">Desktop</option></select>
+    <select id="theme" title="Theme"><option value="amber">Amber (Bloomberg)</option><option value="green">Green phosphor</option><option value="dark">Dark modern</option><option value="light">Light</option></select>
+  </header>
+  <div class="tabs" id="tabbar"></div>
+  <div id="status">Ready. <b>＋</b> new tab · right-click a tab to color/rename · Scenario has locks &amp; resets · Saved lists all runs.</div>
+  <div class="body"><main id="view"></main><aside id="help"></aside></div>
+  <div class="reflinks" id="reflinks"></div>
+  <footer>Decision support from indicator rules — not a prediction, not 95% accurate, not licensed advice. Swing/position horizon.</footer>
+
+<div id="ctx"><div class="swatches" id="swatches"></div><input id="ctxName" placeholder="Rename tab…" style="width:100%;margin-bottom:6px"/><div class="mi" id="ctxRename"></div></div>
+
+<div id="aboutOverlay">
+  <div id="aboutBox">
+    <div class="ab-brand"><svg viewBox="0 0 32 32"><rect x="2.5" y="2.5" width="27" height="27" rx="7"/><text x="16" y="13.5" text-anchor="middle" font-family="Menlo,Consolas,monospace" font-weight="700" font-size="11" letter-spacing="-.5" fill="currentColor" stroke="none">SS</text><line x1="9" y1="22" x2="9" y2="27"/><rect x="7.6" y="22.5" width="2.8" height="4" rx=".8"/><line x1="16" y1="18" x2="16" y2="27"/><rect x="14.6" y="20" width="2.8" height="5.5" rx=".8"/><line x1="23" y1="15" x2="23" y2="26"/><rect x="21.6" y="16.5" width="2.8" height="7" rx=".8"/></svg><span>STOCKSCANNER</span></div>
+    <div class="ab-sub">EMA swing / position system — 9 / 20 / 200</div>
+    <div class="ab-tag">
+      Built by <b>MAKO</b><br/>
+      Multi-Agent Knowledge Orchestration<br/>
+      <span class="dim">© 2026 Abunai Co.</span> · <span class="ab-link" id="aboutLink">Abunaico.com</span>
+    </div>
+    <div class="ab-note">Decision support from indicator rules — not a prediction, not licensed advice.</div>
+    <div class="ab-ver">Version <span class="ab-link" id="aboutVer">v0.0.0</span> · <span class="ab-link" id="aboutRepo">GitHub</span></div>
+    <button id="aboutClose">Close</button>
+  </div>
+</div>
+
+<script type="module">
+  const invoke = window.__TAURI__?.core?.invoke;
+  const $=(id)=>document.getElementById(id);
+  const status=(m)=>{$("status").innerHTML=m;};
+  const fmtMoney=(x)=>"$"+Number(x).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  const cls=(v)=>v>=0?"up":"down";
+  const now=()=>new Date().toLocaleString();
+  const PALETTE=["#ff9f1c","#33d17a","#ff5c5c","#4aa3ff","#b10dc9","#ffcf40","#7fdbff","#f012be","#01ff70","#ff851b","#39cccc","#9aa0a6"];
+  const SCEN_DEFAULTS={entry:52,target:71,stop:49,capital:50000,winprob:45,n:20000};
+
+  // ---- inline SVG icon set (no emojis) ----
+  const ICON={
+    search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>',
+    chart:'<svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 4-6"/></svg>',
+    sliders:'<svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M18 18h2"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="16" cy="18" r="2"/></svg>',
+    table:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 9h18M3 14h18M9 4v16"/></svg>',
+    download:'<svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>',
+    help:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 013.6-2.2c1 .5 1.4 1.6 1 2.6-.4 1-1.6 1.3-2 2.1-.2.4-.2.8-.2 1.2"/><circle cx="12" cy="17" r=".6" fill="currentColor" stroke="none"/></svg>',
+    add:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+    close:'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    lock:'<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="1"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>',
+    unlock:'<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="1"/><path d="M8 11V8a4 4 0 017-2.6"/></svg>',
+    reset:'<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 109-9 9 9 0 00-6.7 3"/><path d="M4 3v4h4"/></svg>',
+    resetAll:'<svg viewBox="0 0 24 24"><path d="M2 12a10 10 0 1010-10"/><path d="M2 4v4h4"/><path d="M12 8v4l3 2"/></svg>',
+    pencil:'<svg viewBox="0 0 24 24"><path d="M4 20h4L20 8l-4-4L4 16v4z"/><path d="M14 6l4 4"/></svg>',
+    layoutH:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="8" height="16" rx="1"/><rect x="13" y="4" width="8" height="16" rx="1"/></svg>',
+    layoutV:'<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="8" rx="1"/><rect x="4" y="13" width="16" height="8" rx="1"/></svg>',
+    save:'<svg viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v6h7V3M8 21v-7h8v7"/></svg>',
+    trash:'<svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
+    book:'<svg viewBox="0 0 24 24"><path d="M4 4h7a2 2 0 012 2v14a2 2 0 00-2-2H4z"/><path d="M20 4h-7a2 2 0 00-2 2v14a2 2 0 012-2h7z"/></svg>',
+    ext:'<svg viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"/></svg>',
+    note:'<svg viewBox="0 0 24 24"><path d="M4 4h16v12l-4 4H4z"/><path d="M20 16h-4v4"/><path d="M8 9h8M8 13h5"/></svg>',
+  };
+  const ic=(n)=>ICON[n]||"";
+  // inject icons into header buttons that declared data-i
+  document.querySelectorAll("[data-i]").forEach(b=>{const s=ic(b.dataset.i);b.insertAdjacentHTML("afterbegin",s);});
+
+  $("theme").onchange=(e)=>{document.body.setAttribute("data-theme",e.target.value);persist();};
+
+  // ---- persistence ----
+  function persist(){try{localStorage.setItem("ss_tabs",JSON.stringify(tabs));localStorage.setItem("ss_history",JSON.stringify(history));localStorage.setItem("ss_theme",$("theme").value);localStorage.setItem("ss_savedLayout",savedLayout);localStorage.setItem("ss_help",helpOn?"1":"0");localStorage.setItem("ss_tickerLogs",JSON.stringify(tickerLogs));}catch(e){}}
+  function restore(){try{
+    const th=localStorage.getItem("ss_theme");if(th){$("theme").value=th;document.body.setAttribute("data-theme",th);}
+    history=JSON.parse(localStorage.getItem("ss_history")||"[]");savedLayout=localStorage.getItem("ss_savedLayout")||"horizontal";
+    helpOn=localStorage.getItem("ss_help")==="1";
+    tickerLogs=JSON.parse(localStorage.getItem("ss_tickerLogs")||"{}");
+    const t=JSON.parse(localStorage.getItem("ss_tabs")||"[]");
+    if(t.length){tabs=t;seq=Math.max(...tabs.map(x=>+x.id.slice(1)),0);active=tabs[0].id;return true;}
+  }catch(e){}return false;}
+
+  // ---- per-ticker local log -------------------------------------------------
+  // tickerLogs = { BSX: [ {id, ts, tsRaw, kind, title, plain, notes}, ... ] }
+  // Every scan / backtest / scenario run appends an entry; notes are saved against
+  // that individual temporal run, so the log is a timeline of what you saw and thought.
+  function logRun(ticker,rec){
+    const key=(ticker||"UNTAGGED").toUpperCase();
+    if(!tickerLogs[key])tickerLogs[key]=[];
+    const entry={id:"L"+Date.now()+Math.floor(Math.random()*999),ts:now(),tsRaw:Date.now(),notes:"",...rec};
+    tickerLogs[key].unshift(entry);
+    if(tickerLogs[key].length>300)tickerLogs[key].pop();
+    persist();
+    return entry;
+  }
+  function logEntryById(id){for(const k of Object.keys(tickerLogs)){const e=tickerLogs[k].find(x=>x.id===id);if(e)return e;}return null;}
+
+  let tabs=[],active=null,seq=0,history=[],savedLayout="horizontal",ctxTab=null,sortKey="tsRaw",sortDir=-1,selRow=null,helpOn=false;
+  // ONE view at a time, Warp-style: "tabs" | "split" | "saved" | "log". Never two at once.
+  let mode="tabs";
+  let tickerLogs={},logTicker=null,logSel=null;
+  const MODE_BTN={split:"splitBtn",saved:"savedBtn",log:"logBtn"};
+  function setMode(m){
+    mode=(m===mode&&m!=="tabs")?"tabs":m;           // clicking the active view toggles back to tabs
+    Object.entries(MODE_BTN).forEach(([k,id])=>{const b=$(id);if(b)b.classList.toggle("primary",mode===k);});
+    renderTabs();renderView();persist();
+    status(mode==="tabs"?"Tab view."
+      :mode==="split"?"List/pane view — click a row to open that tab as the active view."
+      :mode==="saved"?"Saved runs — click headers to sort, a row to view."
+      :"Ticker log — every scan per ticker, with notes saved against each run.");
+  }
+
+  function newTab(kind="scan"){const id="t"+(++seq);
+    const t={id,kind,title:kind==="scenario"?"Scenario":"(empty)",color:PALETTE[(seq-1)%12],data:null,plain:"",ts:null,
+      scen:{...SCEN_DEFAULTS},locks:{},notes:"",ticker:"",objective:"",
+      onboard:kind==="scenario"};   // scenario tabs open on the onboarding step first
+    tabs.push(t);active=id;mode="tabs";renderTabs();renderView();persist();return t;}
+  function closeTab(id){const i=tabs.findIndex(t=>t.id===id);if(i<0)return;tabs.splice(i,1);if(active===id)active=tabs.length?tabs[Math.max(0,i-1)].id:null;if(!tabs.length)newTab("scan");else{renderTabs();renderView();}persist();}
+  const cur=()=>tabs.find(t=>t.id===active);
+  const escapeHtml=(s)=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+
+  function renderTabs(){
+    const bar=$("tabbar");bar.innerHTML="";
+    tabs.forEach(t=>{const el=document.createElement("div");el.className="tab"+(t.id===active&&mode==="tabs"?" active":"");
+      el.style.setProperty("--tabc",t.color);
+      el.innerHTML=`<span class="glyph"></span><span>${escapeHtml(t.title)}</span><span class="x" title="Close">${ic("close")}</span>`;
+      // clicking a tab always returns to tab view — the views are mutually exclusive
+      el.onclick=(e)=>{if(e.target.closest(".x")){closeTab(t.id);}else{active=t.id;setMode("tabs");}};
+      el.oncontextmenu=(e)=>{e.preventDefault();openCtx(e.clientX,e.clientY,t);};bar.appendChild(el);});
+    const add=document.createElement("div");add.className="tab addtab";add.innerHTML=ic("add");add.title="New tab";add.onclick=()=>newTab("scan");bar.appendChild(add);
+  }
+
+  function openCtx(x,y,t){ctxTab=t;const sw=$("swatches");sw.innerHTML="";PALETTE.forEach(c=>{const d=document.createElement("div");d.className="sw";d.style.background=c;d.onclick=()=>{t.color=c;$("ctx").style.display="none";renderTabs();persist();};sw.appendChild(d);});$("ctxRename").innerHTML=ic("pencil")+"<span>Apply name</span>";const inp=$("ctxName");inp.value=t.title==="(empty)"?"":t.title;const ctx=$("ctx");ctx.style.left=Math.min(x,innerWidth-200)+"px";ctx.style.top=y+"px";ctx.style.display="block";setTimeout(()=>inp.focus(),0);}
+  function commitRename(){const t=ctxTab;const n=$("ctxName").value.trim();$("ctx").style.display="none";if(t&&n){t.title=n;renderTabs();if(mode!=="tabs")renderView();persist();}}
+  $("ctxRename").onclick=commitRename;
+  $("ctxName").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();commitRename();}});
+  document.addEventListener("mousedown",(e)=>{if(!$("ctx").contains(e.target))$("ctx").style.display="none";});
+
+  // ---- help panel ----
+  const HELP={
+    scan:[["Verdict","BUY / WATCH / WAIT / AVOID from the 9/20/200 EMA rules."],["Regime","DISCOUNT = below the 200-wk EMA (buy zone); PREMIUM = above it."],["Take-profit","The 200-wk EMA — the target / expected rejection."],["Stop-loss","ATR-based safety exit."],["R-multiple","Reward ÷ risk. Higher is better; ≥1.5 is a clean setup."],["Setup quality","How many of the 5 filters passed."]],
+    backtest:[["Win-rate","% of historical trades that hit target. Trend systems run LOW win-rate."],["Avg R","Average reward-per-risk across trades."],["Expectancy","Avg R per trade — the real edge. Near 0 = no edge."],["Profit factor","Gross wins ÷ gross losses. ∞ = no losing trades (tiny sample)."],["Note","Sample-size / edge honesty flag."]],
+    scenario:[["Sliders","Set entry / target / stop / capital / win-prob / #sims."],["Lock","Hold a value constant; unlocked inputs are varied around their value each run."],["Reset (row)","Reset that one slider to its default."],["Reset all","Restore the original simulation."],["Expected R / P&L","Driven by YOUR inputs — a what-if distribution, not a prediction."],["Save snapshot","Store this run in the Saved table."]],
+    saved:[["Table","Every scan / backtest / snapshot, newest first."],["Sort","Click a column header (Date, Ticker) to sort."],["Viewer","Click a row to read its plain-text result."],["Layout","Toggle Left/Right vs Top/Bottom split."]],
+    log:[["Ticker chips","One log per symbol — click to switch. The count is how many runs are stored."],["Runs","Every scan, backtest and scenario for that ticker, newest first."],["Notes","Written against that ONE run, so you can see what you thought at the time."],["Rescan","Re-runs the active tab and appends a new dated entry here."],["Clear","Deletes the log for the selected ticker only."]],
+  };
+  function renderHelp(kind){const h=$("help");if(!helpOn){h.classList.remove("show");return;}h.classList.add("show");const rows=HELP[kind]||HELP.scan;h.innerHTML=`<h3>${kind} — field guide</h3><dl>${rows.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl><h3>Reminder</h3><dd class="dim">Rules-based research helper. Not a prediction, not advice. Swing/position horizon.</dd>`;}
+
+  // ---- per-tab notes --------------------------------------------------------
+  const notesHTML=(t)=>`<div class="notes"><div class="nh">${ic("note")}<span class="k">Notes — ${escapeHtml(t.title)}</span>
+      <span class="saved" id="noteSaved_${t.id}">saved</span></div>
+    <textarea id="notes_${t.id}" placeholder="Your read on this run: thesis, what would falsify it, what you'd do next…">${escapeHtml(t.notes||"")}</textarea></div>`;
+  let noteTimer=null;
+  function wireNotes(t){
+    const ta=$("notes_"+t.id);if(!ta)return;
+    ta.oninput=()=>{
+      t.notes=ta.value;
+      // mirror the note onto this tab's most recent log entry so it's kept per temporal run
+      if(t.logId){const e=logEntryById(t.logId);if(e)e.notes=ta.value;}
+      clearTimeout(noteTimer);
+      noteTimer=setTimeout(()=>{persist();const s=$("noteSaved_"+t.id);if(s){s.classList.add("on");setTimeout(()=>s.classList.remove("on"),900);}},400);
+    };
+  }
+
+  // empty-tab canvas: choose Scan / Backtest / Scenario + ticker, right in the tab
+  function emptyCanvasHTML(t){
+    return `<div class="empty-canvas">
+      <div class="ec-title">New tab</div><div class="ec-sub">Pick what this tab holds</div>
+      <div class="ec-row">
+        <input id="ec_t_${t.id}" placeholder="TICKER" value="${escapeHtml(t.ticker||"")}" maxlength="8">
+        <select id="ec_tf_${t.id}"><option>weekly</option><option>daily</option></select>
+      </div>
+      <div class="ec-opts">
+        <button data-a="scan">${ic("search")}<span>Scan</span></button>
+        <button data-a="backtest">${ic("chart")}<span>Backtest</span></button>
+        <button data-a="scenario">${ic("sliders")}<span>Scenario</span></button>
+      </div></div>`;
+  }
+  function wireEmptyCanvas(t){
+    const inp=$("ec_t_"+t.id),tf=$("ec_tf_"+t.id);if(!inp)return;
+    if($("tf").value)tf.value=$("tf").value;
+    const go=async(a)=>{
+      const sym=inp.value.trim().toUpperCase();
+      if(a==="scenario"){t.kind="scenario";delete t.onboard;t.title=sym?`${sym} scenario`:"Scenario";if(sym)t.ticker=sym;renderTabs();renderView();status("Scenario — drag sliders, lock values.");persist();return;}
+      if(!sym){status("Enter a ticker first.");inp.focus();return;}
+      $("ticker").value=sym;$("tf").value=tf.value;status(`${a==="scan"?"Scanning":"Backtesting"} <b>${sym}</b>…`);
+      try{if(a==="scan")await scanInto(t,sym);else await backtestInto(t,sym);status("Done.");}
+      catch(e){status("Error.");$("view").innerHTML=`<pre class="down">${escapeHtml(String(e))}</pre>`;}
+    };
+    el_each(t,"[data-a]",(b)=>b.onclick=()=>go(b.dataset.a));
+    inp.addEventListener("keydown",e=>{if(e.key==="Enter")go("scan");});
+  }
+  function el_each(t,sel,fn){const root=$("ec_t_"+t.id)?.closest(".empty-canvas");if(root)root.querySelectorAll(sel).forEach(fn);}
+
+  // fill an element with one tab's body; wire scenario if needed
+  function fillBody(el,t){
+    if(!t){el.innerHTML="";return;}
+    if(t.kind==="scenario"&&t.onboard){el.innerHTML=onboardHTML(t);wireOnboard(t);return;}
+    if(t.kind==="scenario"){el.innerHTML=scenarioHTML(t)+notesHTML(t);wireScenario(t);recalcScenario(t,false);wireNotes(t);return;}
+    if(!t.data){el.innerHTML=emptyCanvasHTML(t)+notesHTML(t);wireEmptyCanvas(t);wireNotes(t);return;}
+    if(t.kind==="scan")el.innerHTML=scanHTML(t.data)+tsLine(t)+notesHTML(t);
+    else el.innerHTML=backtestHTML(t.data)+tsLine(t)+notesHTML(t);
+    wireNotes(t);
+  }
+  const helpKind=(t)=>!t?"scan":t.kind==="scenario"?"scenario":t.kind==="backtest"?"backtest":"scan";
+
+  function renderView(){
+    const v=$("view");
+    renderRefLinks();
+    if(mode==="saved"){v.innerHTML="";v.appendChild(savedView());renderHelp("saved");return;}
+    if(mode==="log"){v.innerHTML="";v.appendChild(logView());renderHelp("log");return;}
+    if(mode==="split"){v.innerHTML="";v.appendChild(splitView());renderHelp(helpKind(cur()));return;}
+    const t=cur();fillBody(v,t);renderHelp(helpKind(t));
+  }
+
+  // global list/pane viewer of OPEN TABS
+  function splitView(){
+    const wrap=document.createElement("div");wrap.className="saved "+(savedLayout==="vertical"?"vertical":"");
+    const listBox=document.createElement("div");listBox.className="list";
+    listBox.innerHTML=`<table><thead><tr><th>Tab</th><th>Type</th><th>Run</th></tr></thead><tbody>${tabs.map(t=>`<tr data-id="${t.id}" class="${t.id===active?"sel":""}"><td><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${t.color};margin-right:8px"></span>${escapeHtml(t.title)}</td><td class="dim">${t.kind}</td><td class="dim">${t.ts||"—"}</td></tr>`).join("")}</tbody></table>`;
+    const pane=document.createElement("div");pane.className="viewer";
+    fillBody(pane,cur());
+    wrap.appendChild(listBox);wrap.appendChild(pane);
+    // choosing a row leaves the list view entirely and opens that tab (Warp behaviour)
+    setTimeout(()=>{listBox.querySelectorAll("tr[data-id]").forEach(tr=>tr.onclick=()=>{active=tr.dataset.id;setMode("tabs");});},0);
+    return wrap;
+  }
+  const tsLine=(t)=>t.ts?`<pre class="ts">\nRun: ${t.ts}</pre>`:"";
+
+  function kpiGrid(items){return `<div class="kpi">${items.map(([k,v,c])=>`<div class="cell"><div class="k">${k}</div><div class="v ${c||""}">${v}</div></div>`).join("")}</div>`;}
+  function dtable(rows){return `<div class="dtwrap"><table><tbody>${rows.map(([k,v,c])=>`<tr><td class="lbl">${k}</td><td class="val num ${c||""}">${v}</td></tr>`).join("")}</tbody></table></div>`;}
+
+  function scanHTML(a){
+    const vc=a.verdict.toLowerCase();const vcolor=vc.includes("buy")&&!vc.includes("avoid")?"up":vc.includes("avoid")?"down":"warn";
+    const kp=[["Verdict",a.verdict,vcolor],["Price",fmtMoney(a.price),""],["Regime",a.regime,a.regime==="DISCOUNT"?"up":a.regime==="PREMIUM"?"down":"warn"],
+      ["Take-profit",fmtMoney(a.take_profit)+" ("+(a.upside_pct>=0?"+":"")+a.upside_pct+"%)",cls(a.upside_pct)],["Stop-loss",fmtMoney(a.stop_loss)+" ("+a.downside_pct+"%)","down"],["R-multiple",a.r_multiple,cls(a.r_multiple)]];
+    const tbl=dtable([["EMA 9",fmtMoney(a.ema9)],["EMA 20",fmtMoney(a.ema20)],["EMA 200 (target)",fmtMoney(a.ema200),"warn"],["RSI",a.rsi],["ATR",fmtMoney(a.atr)],["Setup quality",a.setup_quality],
+      ["Rejection zones",a.rejection_zones.map(fmtMoney).join("  ")||"n/a"],["Support",a.support.map(fmtMoney).join("  ")||"n/a"]]);
+    const why=`<pre class="dim">\nWhy:\n${a.reasons.map(r=>"  - "+escapeHtml(r)).join("\n")}</pre>`;
+    return kpiGrid(kp)+tbl+why;
+  }
+  function backtestHTML(r){
+    const pf=(r.profit_factor==null)?"∞":r.profit_factor;
+    const kp=[["Trades",r.trades,""],["Win-rate",r.win_rate+"%",""],["Avg R",r.avg_r,cls(r.avg_r)],["Expectancy",r.expectancy,cls(r.expectancy)],["Profit factor",pf,""],["Total R",r.total_r,cls(r.total_r)]];
+    const log=(r.trade_log||[]).slice(-14);
+    const tbl=`<div class="dtwrap"><table><thead><tr><th>Entry</th><th>Exit</th><th>Outcome</th><th class="num">R</th></tr></thead><tbody>${log.map(x=>`<tr><td>${x.entry_date}</td><td>${x.exit_date}</td><td class="${x.outcome==='WIN'?'up':x.outcome==='LOSS'?'down':'dim'}">${x.outcome}</td><td class="num ${cls(x.r)}">${x.r>=0?"+":""}${x.r}R</td></tr>`).join("")||`<tr><td colspan=4 class="dim">No trades in sample.</td></tr>`}</tbody></table></div>`;
+    return kpiGrid(kp)+`<pre class="dim" style="margin:12px 0">${escapeHtml(r.note)}</pre>`+tbl;
+  }
+  const plainScan=(a)=>[`STOCKSCANNER — ${a.ticker} [${a.timeframe}]`,`Run: ${now()}`,`Verdict:      ${a.verdict}`,`Regime:       ${a.regime}`,`Price:        ${a.price}`,`EMA9/20/200:  ${a.ema9} / ${a.ema20} / ${a.ema200}`,`RSI/ATR:      ${a.rsi} / ${a.atr}`,`Setup quality:${a.setup_quality}`,`Entry:        ${a.entry}`,`Take-profit:  ${a.take_profit} (${a.upside_pct}%)`,`Stop-loss:    ${a.stop_loss} (${a.downside_pct}%)`,`R-multiple:   ${a.r_multiple}`,`Rejection:    ${a.rejection_zones.join(", ")}`,`Support:      ${a.support.join(", ")}`,``,`Why:`,...a.reasons.map(r=>"  - "+r),``,`Not a prediction, not advice. Swing/position horizon.`].join("\n");
+
+  // ---- scenario ----
+  const SLIDERS=[["entry","Entry price",1,500,0.5],["target","Target price",1,800,0.5],["stop","Stop price",1,500,0.5],["capital","Capital",1000,250000,1000],["winprob","Prob hit target",1,99,1],["n","Simulations",1000,50000,1000]];
+  function scenarioHTML(t){const s=t.scen;
+    const one=([id,label,min,max,step])=>{const locked=!!t.locks[id];const suffix=id==="winprob"?"%":"";
+      return `<div class="slider ${locked?"locked":""}"><div class="row"><span class="lab">${label}</span><span class="ctl">
+        <span class="val" id="${id}v">${s[id]}${suffix}</span>
+        <button class="mini ${locked?"on":""}" id="lock_${id}" title="Lock (held constant; others vary around it)">${locked?ic("lock"):ic("unlock")}</button>
+        <button class="mini" id="rst_${id}" title="Reset this slider">${ic("reset")}</button></span></div>
+      <input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${s[id]}"></div>`;};
+    return `<div class="scenbar"><button id="resetAll">${ic("resetAll")}Reset all</button><button id="snapSave">${ic("save")}Save snapshot</button><span class="ts" id="scents">${t.ts?("Last run: "+t.ts):"not run yet"}</span></div>
+      <div class="sliders">${SLIDERS.map(one).join("")}</div><div class="kpi" id="scenkpi"></div><pre id="scenout" class="dim"></pre>`;}
+  function wireScenario(t){SLIDERS.forEach(([id])=>{const el=$(id);if(!el)return;
+      el.oninput=()=>{if(t.locks[id]){el.value=t.scen[id];return;}t.scen[id]=parseFloat(el.value);$(id+"v").textContent=el.value+(id==="winprob"?"%":"");recalcScenario(t,true);};
+      $("lock_"+id).onclick=()=>{t.locks[id]=!t.locks[id];renderView();persist();};
+      $("rst_"+id).onclick=()=>{t.scen[id]=SCEN_DEFAULTS[id];renderView();recalcScenario(t,true);};});
+    $("resetAll").onclick=()=>{t.scen={...SCEN_DEFAULTS};t.locks={};renderView();recalcScenario(t,true);};
+    $("snapSave").onclick=()=>{addHistory({ticker:"SCENARIO",kind:"scenario",title:t.title,plain:t.plain});status("Snapshot saved to <b>Saved</b>.");};}
+  const mulberry32=(a)=>()=>{a|=0;a=a+0x6D2B79F5|0;let x=Math.imul(a^a>>>15,1|a);x=x+Math.imul(x^x>>>7,61|x)^x;return((x^x>>>14)>>>0)/4294967296;};
+  function recalcScenario(t,stamp){const s=t.scen;const rng=mulberry32(12345);
+    const jit=(id,base,amt)=>t.locks[id]?base:base*(1+(rng()-0.5)*amt);
+    const shares=Math.floor(s.capital/s.entry);const pnls=[];
+    for(let i=0;i<s.n;i++){const entry=jit("entry",s.entry,0.04),target=jit("target",s.target,0.06),stop=jit("stop",s.stop,0.06);const p=Math.min(0.99,Math.max(0.01,jit("winprob",s.winprob/100,0.10)));const hit=rng()<p;pnls.push((hit?(target-entry):-(entry-stop))*shares);}
+    pnls.sort((a,b)=>a-b);const mean=pnls.reduce((x,y)=>x+y,0)/pnls.length,pct=(q)=>pnls[Math.floor(q*pnls.length)];const probLoss=pnls.filter(x=>x<0).length/pnls.length*100;
+    const risk0=s.entry-s.stop,reward0=s.target-s.entry,rmult=risk0>0?reward0/risk0:NaN,evR=s.winprob/100*rmult-(1-s.winprob/100);
+    const kp=[["Shares",shares,""],["R-multiple",isFinite(rmult)?rmult.toFixed(2):"n/a",cls(rmult)],["Expected R",evR.toFixed(2),cls(evR)],["Exp P&L",fmtMoney(mean),cls(mean)],["Prob of loss",probLoss.toFixed(0)+"%",""],["P10 / P90",fmtMoney(pct(0.10))+" / "+fmtMoney(pct(0.90)),""]];
+    if($("scenkpi"))$("scenkpi").innerHTML=kp.map(([k,v,c])=>`<div class="cell"><div class="k">${k}</div><div class="v ${c||""}">${v}</div></div>`).join("");
+    const locks=Object.keys(t.locks).filter(k=>t.locks[k]);
+    if($("scenout"))$("scenout").textContent=`Entry ${s.entry}  Target ${s.target}  Stop ${s.stop}  |  win-prob ${s.winprob}%  |  ${s.n} sims`+(locks.length?`  |  LOCKED: ${locks.join(", ")}`:"")+`\nRisk/share ${risk0.toFixed(2)}   Reward/share ${reward0.toFixed(2)}   R ${isFinite(rmult)?rmult.toFixed(2):"n/a"}\nWorst 1% ${fmtMoney(pct(0.01))}   Best 1% ${fmtMoney(pct(0.99))}\n\nUnlocked inputs are perturbed around their value each run; locked ones held constant.\nExpected value follows YOUR inputs — a what-if distribution, not a prediction.`;
+    if(stamp){t.ts=now();if($("scents"))$("scents").textContent="Last run: "+t.ts;}
+    if(t.title==="(empty)")t.title="Scenario";
+    t.plain=[`STOCKSCANNER — SCENARIO`,`Run: ${t.ts||now()}`,`Entry ${s.entry}  Target ${s.target}  Stop ${s.stop}`,`Capital ${s.capital}  Win-prob ${s.winprob}%  Sims ${s.n}`,locks.length?`Locked: ${locks.join(", ")}`:`Locked: none`,`Shares ${shares}`,`R-multiple ${isFinite(rmult)?rmult.toFixed(2):"n/a"}`,`Expected R ${evR.toFixed(2)}`,`Expected P&L ${mean.toFixed(2)}`,`Prob of loss ${probLoss.toFixed(0)}%`,`P10/P90 ${pct(0.10).toFixed(2)}/${pct(0.90).toFixed(2)}`,`Worst 1% ${pct(0.01).toFixed(2)}  Best 1% ${pct(0.99).toFixed(2)}`,``,`What-if, not a prediction.`].join("\n");
+    persist();
+  }
+
+  // ---- scenario onboarding: start from a ticker OR a written objective ----
+  function onboardHTML(t){
+    const known=Object.keys(tickerLogs).sort();
+    return `<div style="max-width:560px">
+      <div class="cell" style="border-left-color:var(--accent);margin-bottom:14px">
+        <div class="k">New simulation</div>
+        <div class="v" style="font-size:14px">What is this scenario for?</div>
+      </div>
+      <div class="slider" style="margin-bottom:10px">
+        <div class="row"><span class="lab">Ticker (optional)</span></div>
+        <input id="obTicker" placeholder="e.g. BSX" style="width:100%;margin-top:8px;text-transform:uppercase;letter-spacing:2px;font-weight:700" value="${escapeHtml(t.ticker||"")}" />
+        ${known.length?`<div class="tickerhdr" style="margin-top:8px">${known.map(k=>`<span class="tchip" data-ob="${k}">${k}</span>`).join("")}</div>`:""}
+      </div>
+      <div class="slider" style="margin-bottom:10px">
+        <div class="row"><span class="lab">Objective (optional)</span></div>
+        <input id="obObjective" placeholder="e.g. Is a 20% drawdown survivable at this size?" style="width:100%;margin-top:8px" value="${escapeHtml(t.objective||"")}" />
+      </div>
+      <div class="scenbar">
+        <button id="obStart" class="primary">${ic("sliders")}Start simulation</button>
+        <span class="ts">Give it a ticker, an objective, or both. Either one names the tab.</span>
+      </div>
+      <pre class="dim">A scenario is a what-if over YOUR assumptions, not a forecast.
+Naming the objective up front keeps the run honest: you decide what
+you were testing before you see the numbers.</pre></div>`;
+  }
+  function wireOnboard(t){
+    const start=()=>{
+      const tk=($("obTicker").value||"").trim().toUpperCase();
+      const ob=($("obObjective").value||"").trim();
+      t.ticker=tk;t.objective=ob;t.onboard=false;
+      t.title=tk&&ob?`${tk} — ${ob.slice(0,28)}`:tk?`${tk} scenario`:ob?ob.slice(0,32):"Scenario";
+      // seed entry price from this ticker's most recent scan, if we have one
+      const log=tickerLogs[tk];
+      if(log){const lastScan=log.find(e=>e.kind==="scan"&&e.price);
+        if(lastScan){const p=Number(lastScan.price);
+          if(isFinite(p)&&p>0){t.scen.entry=Math.round(p*2)/2;t.scen.target=Math.round(p*1.35*2)/2;t.scen.stop=Math.round(p*0.92*2)/2;}}}
+      renderTabs();renderView();persist();
+      status(tk?`Scenario seeded for <b>${tk}</b>.`:"Scenario started.");
+    };
+    $("obStart").onclick=start;
+    $("obObjective").addEventListener("keydown",e=>{if(e.key==="Enter")start();});
+    $("obTicker").addEventListener("keydown",e=>{if(e.key==="Enter")start();});
+    document.querySelectorAll("[data-ob]").forEach(c=>c.onclick=()=>{$("obTicker").value=c.dataset.ob;});
+  }
+
+  // ---- per-ticker log view ----
+  function logView(){
+    const container=document.createElement("div");container.style.cssText="display:flex;flex-direction:column;height:100%;";
+    const keys=Object.keys(tickerLogs).sort();
+    if(!logTicker||!tickerLogs[logTicker])logTicker=keys[0]||null;
+    const hdr=document.createElement("div");hdr.className="tickerhdr";
+    hdr.innerHTML=keys.length
+      ? keys.map(k=>`<span class="tchip ${k===logTicker?"on":""}" data-t="${k}">${k}<span class="n">${tickerLogs[k].length}</span></span>`).join("")
+        +`<span class="spacer"></span><button id="logClear">${ic("trash")}Clear ${logTicker||""}</button>`
+      : `<span class="ts">No scans logged yet. Run a scan and it lands here, per ticker.</span>`;
+    const wrap=document.createElement("div");wrap.className="logwrap "+(savedLayout==="vertical"?"vertical":"");
+    const entries=logTicker?tickerLogs[logTicker]:[];
+    if(!logSel||!entries.some(e=>e.id===logSel))logSel=entries[0]?entries[0].id:null;
+    const listBox=document.createElement("div");listBox.className="list";
+    listBox.innerHTML=entries.length?entries.map(e=>`<div class="logentry ${e.id===logSel?"sel":""}" data-id="${e.id}" style="cursor:pointer;${e.id===logSel?"background:var(--sel);box-shadow:inset 2px 0 0 var(--accent);":""}">
+        <div class="lt">${e.ts} · ${e.kind}${e.verdict?` · <span class="${(e.verdict||"").toLowerCase().includes("buy")?"up":(e.verdict||"").toLowerCase().includes("avoid")?"down":"warn"}">${escapeHtml(e.verdict)}</span>`:""}</div>
+        <div class="ln ${e.notes?"":"empty"}">${e.notes?escapeHtml(e.notes):"no notes on this run"}</div></div>`).join("")
+      :`<pre class="dim" style="padding:12px">Nothing logged for this ticker yet.</pre>`;
+    const viewer=document.createElement("div");viewer.className="viewer";
+    const sel=entries.find(e=>e.id===logSel);
+    viewer.innerHTML=sel
+      ? `<div class="ts" style="margin-bottom:8px">${sel.ts} · ${sel.kind}</div><pre>${escapeHtml(sel.plain||"")}</pre>
+         <div class="notes"><div class="nh">${ic("note")}<span class="k">Notes for this run</span><span class="saved" id="logNoteSaved">saved</span></div>
+         <textarea id="logNote" placeholder="What did you conclude from THIS run?">${escapeHtml(sel.notes||"")}</textarea></div>`
+      : `<pre class="dim">Select a run on the left to read it and write notes against it.</pre>`;
+    wrap.appendChild(listBox);wrap.appendChild(viewer);container.appendChild(hdr);container.appendChild(wrap);
+    setTimeout(()=>{
+      hdr.querySelectorAll("[data-t]").forEach(c=>c.onclick=()=>{logTicker=c.dataset.t;logSel=null;renderView();});
+      listBox.querySelectorAll("[data-id]").forEach(d=>d.onclick=()=>{logSel=d.dataset.id;renderView();});
+      const lc=$("logClear");if(lc)lc.onclick=()=>{if(logTicker&&confirm(`Clear the log for ${logTicker}?`)){delete tickerLogs[logTicker];logTicker=null;logSel=null;persist();renderView();}};
+      const ln=$("logNote");
+      if(ln)ln.oninput=()=>{const e=logEntryById(logSel);if(!e)return;e.notes=ln.value;
+        clearTimeout(noteTimer);noteTimer=setTimeout(()=>{persist();const s=$("logNoteSaved");if(s){s.classList.add("on");setTimeout(()=>s.classList.remove("on"),900);}},400);};
+    },0);
+    return container;
+  }
+
+  // ---- reference links (open in the real browser) ----
+  const REFS=[
+    ["Yahoo",   t=>`https://finance.yahoo.com/quote/${t}`],
+    ["Finviz",  t=>`https://finviz.com/quote.ashx?t=${t}`],
+    ["TradingView",t=>`https://www.tradingview.com/symbols/${t}/`],
+    ["StockCharts",t=>`https://stockcharts.com/h-sc/ui?s=${t}`],
+    ["SEC EDGAR",t=>`https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&ticker=${t}&type=10-K&dateb=&owner=include&count=40`],
+    ["Earnings",t=>`https://finance.yahoo.com/quote/${t}/analysis`],
+  ];
+  async function openRef(url){
+    if(invoke){try{await invoke("open_url",{url});return;}catch(e){status("Could not open browser: "+escapeHtml(String(e)));return;}}
+    window.open(url,"_blank","noopener");
+  }
+  function renderRefLinks(){
+    const bar=$("reflinks");if(!bar)return;
+    const t=cur();
+    const sym=(t&&t.ticker?t.ticker:($("ticker").value||"")).trim().toUpperCase()
+      ||(mode==="log"&&logTicker?logTicker:"");
+    if(!sym){bar.innerHTML=`<span class="lbl">Reference</span><span class="ts">enter a ticker to enable data links</span>`;return;}
+    bar.innerHTML=`<span class="lbl">${sym} data</span>`+
+      REFS.map(([n,f])=>`<span class="rl" data-u="${f(sym)}">${ic("ext")}${n}</span>`).join("");
+    bar.querySelectorAll("[data-u]").forEach(a=>a.onclick=()=>openRef(a.dataset.u));
+  }
+
+  // ---- history / saved ----
+  function addHistory(rec){history.unshift({id:"h"+Date.now()+Math.floor(Math.random()*999),ts:now(),tsRaw:Date.now(),...rec});if(history.length>500)history.pop();persist();}
+  function savedView(){
+    const container=document.createElement("div");container.style.cssText="display:flex;flex-direction:column;height:100%;";
+    const ctrl=document.createElement("div");ctrl.className="savedctrl";
+    ctrl.innerHTML=`<button id="layoutToggle">${savedLayout==="vertical"?ic("layoutV"):ic("layoutH")}${savedLayout==="vertical"?"Top/Bottom":"Left/Right"}</button><button id="clearHist">${ic("trash")}Clear</button><span class="ts">${history.length} saved runs</span>`;
+    const wrap=document.createElement("div");wrap.className="saved "+(savedLayout==="vertical"?"vertical":"");
+    const rows=[...history].sort((a,b)=>{let av=a[sortKey],bv=b[sortKey];if(sortKey==="tsRaw"){av=a.tsRaw;bv=b.tsRaw;}if(av<bv)return -sortDir;if(av>bv)return sortDir;return 0;});
+    const arrow=(k)=>sortKey===k?(sortDir>0?" ▲":" ▼"):"";
+    const listBox=document.createElement("div");listBox.className="list";
+    listBox.innerHTML=`<table><thead><tr><th data-k="tsRaw">Date${arrow("tsRaw")}</th><th data-k="ticker">Ticker${arrow("ticker")}</th><th data-k="kind">Type${arrow("kind")}</th><th data-k="title">Title${arrow("title")}</th></tr></thead><tbody>${rows.map(r=>`<tr data-id="${r.id}" class="${selRow===r.id?"sel":""}"><td class="dim">${r.ts}</td><td class="val">${r.ticker||""}</td><td>${r.kind}</td><td>${escapeHtml(r.title||"")}</td></tr>`).join("")||`<tr><td colspan=4 class="dim">No saved runs yet. Scans/backtests auto-save; Scenario has Save snapshot.</td></tr>`}</tbody></table>`;
+    const viewer=document.createElement("div");viewer.className="viewer";const sel=history.find(r=>r.id===selRow);viewer.innerHTML=sel?`<pre>${escapeHtml(sel.plain)}</pre>`:`<pre class="dim">Select a row to view it here.</pre>`;
+    wrap.appendChild(listBox);wrap.appendChild(viewer);container.appendChild(ctrl);container.appendChild(wrap);
+    setTimeout(()=>{listBox.querySelectorAll("th").forEach(h=>h.onclick=()=>{const k=h.dataset.k;if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=(k==="tsRaw")?-1:1;}renderView();});
+      listBox.querySelectorAll("tr[data-id]").forEach(tr=>tr.onclick=()=>{selRow=tr.dataset.id;renderView();});
+      const lt=$("layoutToggle");if(lt)lt.onclick=()=>{savedLayout=savedLayout==="vertical"?"horizontal":"vertical";persist();renderView();};
+      const ch=$("clearHist");if(ch)ch.onclick=()=>{if(confirm("Clear all saved runs?")){history=[];selRow=null;persist();renderView();}};},0);
+    return container;
+  }
+
+  // scanInto(t, sym) — runs a scan and writes it into tab t (used by both Scan and Rescan)
+  async function scanInto(t,sym){
+    const json=await invoke("scan",{ticker:sym,timeframe:$("tf").value});
+    t.data=JSON.parse(json);t.plain=plainScan(t.data);t.title=`${sym} scan`;t.kind="scan";t.ticker=sym;t.ts=now();
+    addHistory({ticker:sym,kind:"scan",title:t.title,plain:t.plain});
+    const e=logRun(sym,{kind:"scan",title:t.title,plain:t.plain,verdict:t.data.verdict,price:t.data.price,timeframe:$("tf").value});
+    t.logId=e.id;   // notes typed in this tab attach to this run
+    renderTabs();renderView();persist();
+  }
+  async function doScan(){if(!invoke){status("Tauri bridge not available (open via the app).");return;}let t=cur();if(mode!=="tabs"||!t||t.kind!=="scan"||t.data){t=newTab("scan");}const sym=$("ticker").value.trim().toUpperCase();if(!sym)return;status(`Scanning <b>${sym}</b>…`);
+    try{await scanInto(t,sym);status("Done.");}catch(e){status("Error.");$("view").innerHTML=`<pre class="down">${escapeHtml(String(e))}</pre>`;}}
+  // Rescan — re-run THIS tab in place (same ticker/kind), appending a fresh log entry
+  async function doRescan(){
+    if(!invoke){status("Tauri bridge not available.");return;}
+    const t=cur();
+    if(mode!=="tabs"||!t){status("Open a result tab to rescan.");return;}
+    if(t.kind==="scenario"){if(t.onboard){status("Finish setting up the scenario first.");return;}
+      recalcScenario(t,true);
+      const e=logRun(t.ticker||"SCENARIO",{kind:"scenario",title:t.title,plain:t.plain,objective:t.objective});
+      t.logId=e.id;renderView();persist();status("Scenario re-run and logged.");return;}
+    const sym=(t.ticker||$("ticker").value||"").trim().toUpperCase();
+    if(!sym){status("No ticker on this tab to rescan.");return;}
+    $("ticker").value=sym;status(`Rescanning <b>${sym}</b>…`);
+    try{
+      if(t.kind==="backtest"){await backtestInto(t,sym);}else{await scanInto(t,sym);}
+      status(`Rescanned <b>${sym}</b> — logged as a new run.`);
+    }catch(e){status("Error.");$("view").innerHTML=`<pre class="down">${escapeHtml(String(e))}</pre>`;}
+  }
+  async function doBacktest(){if(!invoke){status("Tauri bridge not available.");return;}let t=cur();if(mode!=="tabs"||!t||t.data){t=newTab("scan");}const sym=$("ticker").value.trim().toUpperCase();if(!sym)return;status(`Backtesting <b>${sym}</b>…`);
+    try{await backtestInto(t,sym);status("Done.");}catch(e){status("Error.");$("view").innerHTML=`<pre class="down">${escapeHtml(String(e))}</pre>`;}}
+  async function backtestInto(t,sym){
+    const r=JSON.parse(await invoke("backtest",{ticker:sym,timeframe:$("tf").value}))[0];
+    t.kind="backtest";t.title=`${sym} backtest`;t.ticker=sym;t.ts=now();const pf=(r.profit_factor==null)?"∞ (no losers)":r.profit_factor;
+    t.plain=[`STOCKSCANNER — BACKTEST ${r.ticker} [${r.timeframe}]`,`Run: ${t.ts}`,`Trades ${r.trades}  Wins ${r.wins}  Losses ${r.losses}  Timeouts ${r.timeouts}`,`Win-rate ${r.win_rate}%   Avg R ${r.avg_r}   Expectancy ${r.expectancy}`,`Profit factor ${pf}   Total ${r.total_r} R`,``,r.note,``,...(r.trade_log||[]).slice(-14).map(x=>`${x.entry_date} -> ${x.exit_date}  ${x.outcome}  ${x.r>=0?"+":""}${x.r}R`)].join("\n");
+    t.data=r;addHistory({ticker:sym,kind:"backtest",title:t.title,plain:t.plain});
+    const e=logRun(sym,{kind:"backtest",title:t.title,plain:t.plain,timeframe:$("tf").value});
+    t.logId=e.id;
+    renderTabs();renderView();persist();
+  }
+  function doScenario(){mode="tabs";Object.values(MODE_BTN).forEach(id=>{const b=$(id);if(b)b.classList.remove("primary");});newTab("scenario");status("New scenario — give it a ticker or an objective, then start.");}
+  function doSaved(){setMode("saved");}
+  function doLog(){setMode("log");}
+  async function doExport(){const t=cur();if(mode!=="tabs"){status("Switch to a result tab to export it.");return;}if(!t||!t.plain){status("Nothing to export in this tab.");return;}if(!invoke){status("Export needs the app.");return;}const base=(t.title||"stockscanner").replace(/[^a-z0-9]+/gi,"_").toLowerCase();const stamp=new Date().toISOString().slice(0,19).replace(/[:T]/g,"-");try{const path=await invoke("save_text",{filename:`${base}_${stamp}`,contents:t.plain,location:$("exportLoc").value});status(`Saved: <b>${path}</b>`);}catch(e){status("Export failed: "+e);}}
+  function toggleHelp(){helpOn=!helpOn;$("helpBtn").classList.toggle("primary",helpOn);renderView();persist();}
+
+  function toggleSplit(){setMode("split");}
+  function toggleOrient(){savedLayout=savedLayout==="vertical"?"horizontal":"vertical";$("orientBtn").innerHTML=(savedLayout==="vertical"?ic("layoutV"):ic("layoutH"));persist();renderView();}
+
+  $("scanBtn").onclick=doScan;$("rescanBtn").onclick=doRescan;$("btBtn").onclick=doBacktest;$("scenBtn").onclick=doScenario;$("logBtn").onclick=doLog;$("savedBtn").onclick=doSaved;$("exportBtn").onclick=doExport;$("helpBtn").onclick=toggleHelp;$("splitBtn").onclick=toggleSplit;$("orientBtn").onclick=toggleOrient;
+  $("ticker").addEventListener("keydown",e=>{if(e.key==="Enter")doScan();});
+  $("ticker").addEventListener("input",renderRefLinks);
+
+  // ---- version / GitHub ----
+  const APP_VERSION="1.2.0";                       // bumped with each tagged release
+  const GH_REPO="https://github.com/anthonyshafer/autoparts";
+  const ghReleaseUrl=(v)=>`${GH_REPO}/releases/tag/v${v}`;
+
+  // About modal
+  const brandEl=document.querySelector(".brand");if(brandEl){brandEl.title="About";brandEl.onclick=()=>$("aboutOverlay").classList.add("show");}
+  $("aboutClose").onclick=()=>$("aboutOverlay").classList.remove("show");
+  $("aboutOverlay").onclick=(e)=>{if(e.target.id==="aboutOverlay")$("aboutOverlay").classList.remove("show");};
+  $("aboutLink").onclick=()=>openRef("https://abunaico.com");
+  $("aboutVer").textContent="v"+APP_VERSION;
+  $("aboutVer").onclick=()=>openRef(ghReleaseUrl(APP_VERSION));   // → GitHub release for this version
+  $("aboutRepo").onclick=()=>openRef(GH_REPO+"/releases");
+
+  $("orientBtn").innerHTML=(savedLayout==="vertical"?ic("layoutV"):ic("layoutH"));
+  if(restore()){$("orientBtn").innerHTML=(savedLayout==="vertical"?ic("layoutV"):ic("layoutH"));renderTabs();if(helpOn)$("helpBtn").classList.add("primary");renderView();}else{newTab("scan");}
+</script>
+</body>
+</html>
