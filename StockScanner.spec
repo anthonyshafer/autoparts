@@ -1,7 +1,11 @@
 # -*- mode: python ; coding: utf-8 -*-
-# PyInstaller spec for StockScanner — one-file, windowed (GUI) Windows build.
-# Bundles Python + yfinance/pandas/numpy so the resulting .exe needs nothing installed.
+# Cross-platform PyInstaller spec for StockScanner (windowed GUI).
+# Windows -> one-file StockScanner.exe ; macOS -> StockScanner.app bundle.
+# Bundles Python + yfinance/pandas/numpy so the result needs nothing installed.
+import sys
 from PyInstaller.utils.hooks import collect_all
+
+IS_MAC = sys.platform == "darwin"
 
 datas, binaries, hiddenimports = [], [], []
 # yfinance and curl_cffi pull data files / compiled bits PyInstaller can miss.
@@ -43,4 +47,17 @@ exe = EXE(
     console=False,          # windowed GUI, no console box
     disable_windowed_traceback=False,
 )   # one-file build: all binaries/datas passed into EXE, no COLLECT step
+
+# On macOS, wrap the executable in a proper .app bundle so it's double-clickable.
+if IS_MAC:
+    app = BUNDLE(
+        exe,
+        name="StockScanner.app",
+        icon=None,
+        bundle_identifier="com.stockscanner.ema",
+        info_plist={
+            "NSHighResolutionCapable": True,
+            "LSBackgroundOnly": False,
+        },
+    )
 

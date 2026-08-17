@@ -42,30 +42,58 @@ Get a standalone `StockScanner.exe` (bundles Python + everything — no venv, no
 
 The app is a simple window: type a ticker, pick weekly/daily, click **Scan** or **Backtest**.
 
-### Windows (Python + command line)
+### macOS app — `StockScanner.app`, nothing to install
+
+- **Auto-built:** the GitHub Actions workflow (`.github/workflows/build-apps.yml`) builds the
+  `.app` on GitHub's Mac runners → **Actions** tab → latest run → download **StockScanner-macos**
+  (a zip of the app).
+- **Build it yourself once:** on a Mac with Python 3.10+, run **`./build_macos.sh`** →
+  `dist/StockScanner.app`. Double-click it or drag to `/Applications`.
+- First launch: if Gatekeeper blocks the unsigned app, right-click → **Open** → **Open**, or run
+  `xattr -dr com.apple.quarantine dist/StockScanner.app`.
+
+### Command line (Python)
 
 1. Install **Python 3.10+** from <https://www.python.org/downloads/> — during install,
    tick **"Add python.exe to PATH."**
 2. Double-click **`setup_windows.bat`** (one time — builds a local `.venv` and installs deps).
 3. Double-click **`scan.bat`**, type a ticker (e.g. `BSX`), and read the result.
 
-### Windows / Mac / Linux (command line)
+Two ways to run from a terminal. **uv** is easiest (installs deps automatically per run;
+one-time install from <https://docs.astral.sh/uv/getting-started/installation/>). Otherwise
+use a **pip venv**.
 
+**macOS / Linux — Terminal**
 ```bash
-# option A — pip + venv (works everywhere)
-python -m venv .venv
-# Windows:  .venv\Scripts\activate
-# Mac/Lin:  source .venv/bin/activate
+cd path/to/stocks
+
+# uv (no setup):
+uv run tools/stocks.py scan BSX
+
+# or pip venv:
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 python tools/stocks.py scan BSX
-
-# option B — uv (zero setup; installs deps automatically per run)
-#   install uv once: https://docs.astral.sh/uv/getting-started/installation/
-uv run tools/stocks.py scan BSX
 ```
 
-On Windows without the venv activated, call the interpreter directly:
-`.venv\Scripts\python.exe tools\stocks.py scan BSX`
+**Windows — PowerShell**
+```powershell
+cd C:\path\to\stocks
+
+# uv (no setup):
+uv run tools/stocks.py scan BSX
+
+# or pip venv:
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1        # if blocked: Set-ExecutionPolicy -Scope Process RemoteSigned
+pip install -r requirements.txt
+python tools\stocks.py scan BSX
+```
+
+> Windows tip: if `python` isn't found, install it from <https://www.python.org/downloads/>
+> and tick **"Add python.exe to PATH"**, or use `py` instead of `python`. Without activating
+> the venv, call it directly: `.\.venv\Scripts\python.exe tools\stocks.py scan BSX`.
 
 ---
 
@@ -82,6 +110,14 @@ python tools/stocks.py watch    <TICKER...> [--timeframe weekly|daily]
 | `scan` | Full read on one ticker: verdict, levels, filters, sizing. |
 | `backtest` | Runs the rules over 10–15y of history and reports win-rate, avg R, expectancy. |
 | `watch` | One-line verdict per ticker for a whole watchlist. |
+
+Plus a standalone portfolio simulator:
+```
+uv run tools/simulate.py --capital 50000            # aggressive + conservative Monte Carlo
+uv run tools/simulate.py --capital 50000 --json     # machine-readable
+```
+It runs bear/base/bull scenarios over the research dossier under two risk profiles with a
+shared (correlated) market shock. Edit the allocations/assumptions at the top of the file.
 
 Flags: `--amount` = capital to size against (default $50,000). `--timeframe weekly`
 (200 EMA ≈ 200 weeks ≈ 4 years, the default) or `daily` (200 EMA ≈ 200 days).

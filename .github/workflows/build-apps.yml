@@ -1,0 +1,62 @@
+name: Build Apps (Windows + macOS)
+
+# Builds standalone apps on GitHub-hosted runners and attaches them as downloadable
+# artifacts — no local Python, no venv, nothing to install on your side.
+#   Windows -> StockScanner.exe
+#   macOS   -> StockScanner.app (zipped)
+# Push (or click "Run workflow"), wait a few minutes, download from the run's Artifacts.
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "tools/**"
+      - "StockScanner.spec"
+      - "requirements.txt"
+      - ".github/workflows/build-apps.yml"
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            artifact: StockScanner-windows
+            path: dist/StockScanner.exe
+          - os: macos-latest
+            artifact: StockScanner-macos
+            path: dist/StockScanner-macos.zip
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip pyinstaller
+          python -m pip install -r requirements.txt
+
+      - name: Build
+        run: python -m PyInstaller --noconfirm --clean StockScanner.spec
+
+      - name: Zip the .app (macOS only)
+        if: runner.os == 'macOS'
+        run: |
+          cd dist
+          ditto -c -k --sequesterRsrc --keepParent StockScanner.app StockScanner-macos.zip
+
+      - name: Verify build exists
+        shell: bash
+        run: test -e "${{ matrix.path }}" || { echo "missing ${{ matrix.path }}"; exit 1; }
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.path }}
+          if-no-files-found: error

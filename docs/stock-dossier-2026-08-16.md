@@ -35,6 +35,80 @@ research below is the fundamental cross-check on all five.
 
 ---
 
+## Portfolio simulations — Aggressive vs Conservative
+
+Two Monte Carlo simulations over the bear/base/bull scenarios below, run with
+`tools/simulate.py` (50,000 paths each, $50,000 capital). **This is a what-if over
+assumptions, not a prediction.** Each stock's 12-month price is drawn from a triangular
+distribution (min = bear low, mode = base mid, max = bull high), then a **single shared
+market shock** (~16% annual vol) is applied to every name scaled by its **beta**, so the
+positions are *correlated* — a bad market drags them down together (no fake diversification).
+
+### Parameters (stated so you can judge them)
+
+| | Aggressive | Conservative |
+|---|---|---|
+| Allocation | UBER 30 / ZETA 25 / BSX 20 / SOFI 20 / PFE 5 | BSX 20 / PFE 20 / UBER 10 / **cash 50** |
+| Cash buffer | 0% | 50% |
+| Scenario bias | optimistic (mode shifted +15% toward bull) | pessimistic (mode shifted −15% toward bear) |
+| Rule alignment | ignores the discount-only rule (buys premium momentum) | respects it (only BSX discount + PFE income + small UBER) |
+| Betas used | BSX 0.90 · SOFI 1.50 · ZETA 1.50 · UBER 1.25 · PFE 0.40 | same |
+| Paths / capital / market vol | 50,000 / $50,000 / 16% | same |
+
+### AGGRESSIVE — fully invested, concentrated, optimistic
+- **Expected 12-mo return: +20.1%** (median +20.0%)
+- **Range P10–P90: −7.5% to +48.0%**
+- **Probability of a loss: 17%**
+- Expected P&L **+$10,068** · bad case (1st pct) **−$15,219** · good case (99th pct) **+$35,069**
+
+| Ticker | Alloc | Exp return | P10 | P90 |
+|---|---|---|---|---|
+| UBER | 30% | +31.3% | −3.2% | +65.9% |
+| ZETA | 25% | +7.8% | −28.1% | +43.6% |
+| BSX | 20% | +23.7% | −4.7% | +52.0% |
+| SOFI | 20% | +16.6% | −22.4% | +55.7% |
+| PFE | 5% | +14.4% | +1.0% | +27.6% |
+
+### CONSERVATIVE — 50% cash, discount + income, pessimistic
+- **Expected 12-mo return: +9.1%** (median +9.1%)
+- **Range P10–P90: −0.3% to +18.7%**
+- **Probability of a loss: 11%**
+- Expected P&L **+$4,570** · bad case (1st pct) **−$4,002** · good case (99th pct) **+$13,144**
+
+| Ticker | Alloc | Exp return | P10 | P90 |
+|---|---|---|---|---|
+| BSX | 20% | +19.8% | −8.0% | +48.6% |
+| PFE | 20% | +12.4% | −0.7% | +26.0% |
+| UBER | 10% | +26.9% | −7.8% | +62.1% |
+
+### The tradeoff, and what to look for
+
+Aggressive earns **~2.2× the expected return** (+20% vs +9%) but carries **~3.8× the
+dollar downside** (−$15.2k vs −$4.0k worst case) and a higher loss probability (17% vs 11%).
+Conservative's 50% cash is what compresses the tail. Neither is "right" — it's your risk
+appetite.
+
+**What to look for (triggers / invalidations that would move a real position):**
+- **BSX** — the only discount setup. *Enter trigger:* weekly close **above the 20-EMA
+  ($53.67)**. *Invalidation:* another guidance cut, or a close below the $42.20 52-week low.
+- **UBER** — *bull confirmation:* evidence the market treats AV as accretive (Uber aggregating
+  Nvidia/Rivian fleets). *Bear trigger:* Waymo's own-app launch pulling share; break of the
+  ~$65 low.
+- **ZETA** — *the whole risk is legal.* Watch the securities-litigation docket; an adverse
+  discovery headline is the bear trigger. Fundamentals are not the risk here.
+- **SOFI** — watch **credit quality** (charge-offs/delinquencies) and crypto/Loan-Platform
+  monetization. Rich multiple = fragile to any miss.
+- **PFE** — the **dividend is load-bearing.** Watch free-cash-flow coverage; a cut breaks the
+  thesis. Patent-cliff/IRA headlines cap the upside.
+
+**Honest limits of these sims:** the triangular floors mean the model can't price a crash
+*worse* than each stock's bear case, so true tail risk is understated even with the market
+shock; the betas, 16% market vol, and ±15% bias are **assumptions**, not measured; and the
+scenario ranges are themselves analyst-informed judgments. Re-run with your own
+allocations/assumptions: `uv run tools/simulate.py --capital 50000 --json`.
+
+---
+
 ## How to read each section
 - **Technical (your tool):** verdict, regime, key EMA levels, and — for BSX — the entry/target/stop plan.
 - **Fundamentals & consensus:** cited current data + analyst targets.
