@@ -28,7 +28,21 @@ Give it a ticker; it returns:
 
 ## Install
 
-### Windows (no command line needed)
+### Windows app — single `.exe`, nothing to install (easiest)
+
+Get a standalone `StockScanner.exe` (bundles Python + everything — no venv, no PATH setup):
+
+- **Auto-built for you:** the GitHub Actions workflow (`.github/workflows/build-windows.yml`)
+  compiles the `.exe` on GitHub's Windows machines. Go to the repo's **Actions** tab →
+  latest "Build Windows App" run → download the **StockScanner-windows** artifact. Or tag
+  a release (`git tag v1.0 && git push --tags`) to get a clean Releases download page.
+- **Build it yourself once:** on any Windows PC with Python 3.10+, double-click
+  **`build_windows.bat`** → produces `dist\StockScanner.exe`. Copy that single file to any
+  Windows PC and double-click — the end user needs no Python at all.
+
+The app is a simple window: type a ticker, pick weekly/daily, click **Scan** or **Backtest**.
+
+### Windows (Python + command line)
 
 1. Install **Python 3.10+** from <https://www.python.org/downloads/> — during install,
    tick **"Add python.exe to PATH."**
@@ -150,22 +164,29 @@ falling at a genuine discount reclaim).
 
 Run it yourself: `python tools/stocks.py backtest BSX ABBV PFE JNJ NKE KO DIS INTC --timeframe daily`
 
-Representative results across 8 large-caps (daily, ~5y, 109 trades):
+Representative results across 8 large-caps (daily, ~5y), counting only actionable BUYs
+(R ≥ 1.5) with the **same stop the live tool recommends**:
 
 | Metric | Value | Reading |
 |--------|-------|---------|
-| Total trades | 109 | usable sample |
-| Portfolio avg | **+0.04 R / trade** | ~break-even, slight positive tilt |
-| Per-ticker | mixed | BSX/JNJ/KO/DIS positive; PFE/NKE/INTC negative |
+| Total trades | 44 | usable but modest |
+| Portfolio avg | **+0.01 R / trade** | **essentially zero edge** |
+| Per-ticker | mixed | a couple positive, several negative; most samples tiny |
 | Weekly timeframe | 0–5 trades/ticker | too rare to be a system on its own |
 
-**Takeaways:**
-- The raw rules are **not an edge you can bet heavily on** — expectancy is within noise.
+**Takeaways (read these):**
+- After aligning the backtest to the tool's *actual* stop and only counting the trades
+  you'd really take, expectancy is **~0 R** — this rule set is **not a standalone edge.**
+  Its value is discipline (levels, invalidation, sizing) and screening, not alpha.
+- **Tuned in-sample, unvalidated out-of-sample.** The discount band and entry gates were
+  chosen on these same tickers. A trustworthy edge number requires picking parameters on
+  early years and measuring on held-out later years — **not yet done.** Treat every
+  positive per-ticker figure as *in-sample* until that split exists.
 - It's **ticker-dependent**: backtest *before* trusting it on a new name.
-- Weekly is too rare to trade mechanically; it's a **screen**, daily has enough signals.
-- "Accuracy" only means something once *you* have logged, resolved trades. That's what
-  `journal/` is for. Numbers here are **hypothetical** (past behavior of a rule set),
-  and the backtest assumes stop-first on ambiguous bars, no slippage, and no commissions.
+- Weekly is too rare to trade mechanically; it's a **screen**. Daily has more signals.
+- Numbers here are **hypothetical** (past behavior of a rule set) and assume stop-first on
+  ambiguous bars, exact fills, no slippage, no commissions. Real "accuracy" only exists
+  once *you* have logged, resolved trades — that's what `journal/` is for.
 
 ---
 
