@@ -49,6 +49,24 @@ jobs:
           cd dist
           ditto -c -k --sequesterRsrc --keepParent StockScanner.app StockScanner-macos.zip
 
+      - name: Build .dmg installer (macOS only)
+        if: runner.os == 'macOS'
+        run: |
+          set -e
+          # drag-to-Applications installer. Prefer create-dmg; fall back to plain hdiutil.
+          if brew install create-dmg; then
+            create-dmg \
+              --volname "StockScanner" \
+              --app-drop-link 450 160 \
+              --icon "StockScanner.app" 150 160 \
+              --window-size 600 320 \
+              "dist/StockScanner.dmg" "dist/StockScanner.app" || \
+            hdiutil create -volname "StockScanner" -srcfolder "dist/StockScanner.app" -ov -format UDZO "dist/StockScanner.dmg"
+          else
+            hdiutil create -volname "StockScanner" -srcfolder "dist/StockScanner.app" -ov -format UDZO "dist/StockScanner.dmg"
+          fi
+          test -e dist/StockScanner.dmg
+
       - name: Verify build exists
         shell: bash
         run: test -e "${{ matrix.path }}" || { echo "missing ${{ matrix.path }}"; exit 1; }
@@ -73,10 +91,21 @@ jobs:
           path: ${{ matrix.path }}
           if-no-files-found: error
 
+      - name: Upload .dmg artifact (macOS only)
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: StockScanner-dmg
+          path: dist/StockScanner.dmg
+          if-no-files-found: error
+
       # On a version tag (git tag v1.0 && git push --tags) publish a public Releases page
       # with the app attached — the download link non-technical users can use (no login).
+      # Windows attaches the .exe; macOS attaches both the .dmg installer and the .zip.
       - name: Attach to Release (tags only)
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ matrix.path }}
+          files: |
+            ${{ matrix.path }}
+            ${{ runner.os == 'macOS' && 'dist/StockScanner.dmg' || '' }}

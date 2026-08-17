@@ -18,7 +18,7 @@ There is **nothing to install** — you download one file and double-click it.
 2. You'll see a list. Click the newest one at the top (the **Latest** release).
 3. Under **"Assets,"** click to download the file for your computer:
    - **Windows** → `StockScanner.exe`
-   - **Mac** → `StockScanner-macos.zip`
+   - **Mac** → `StockScanner.dmg` (the installer — easiest)
 4. Wait for it to finish downloading (check your browser's Downloads, usually bottom-left,
    or your **Downloads** folder).
 
@@ -39,13 +39,15 @@ There is **nothing to install** — you download one file and double-click it.
 
 ### On Mac
 
-1. Find `StockScanner-macos.zip` in your **Downloads** folder and **double-click** it to
-   unzip. This creates **`StockScanner`** (the app).
-2. **Right-click** (or hold **Control** and click) the `StockScanner` app, then choose
-   **Open** from the menu.
-3. A box may say the app is from an unidentified developer. Click **Open** again. (You only
+1. Find `StockScanner.dmg` in your **Downloads** folder and **double-click** it. A window
+   opens showing the **StockScanner** app and an **Applications** shortcut.
+2. **Drag** the StockScanner icon onto the **Applications** folder in that window. (This
+   installs it.) Then close the window.
+3. Open your **Applications** folder, **right-click** (or Control-click) StockScanner, and
+   choose **Open**.
+4. A box may say the app is from an unidentified developer. Click **Open** again. (You only
    have to do this the first time.)
-4. The **StockScanner** window opens. Go to Step 3.
+5. The **StockScanner** window opens. Go to Step 3.
 
 > Mac still refusing to open it? Skip to **Troubleshooting** at the bottom.
 
