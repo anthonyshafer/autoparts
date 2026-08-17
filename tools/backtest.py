@@ -99,7 +99,14 @@ def backtest(ticker: str, timeframe: str = "weekly", atr_mult: float = 2.0,
     period = "15y" if timeframe == "weekly" else "5y"
     df = compute_indicators(_fetch(ticker, interval, period))
     market = _market_series(timeframe, df.index)
+    market_list = [bool(market.iloc[k]) for k in range(len(df))]
+    return backtest_frame(df, market_list, atr_mult, max_hold, ticker, timeframe)
 
+
+def backtest_frame(df, market, atr_mult: float = 2.0, max_hold: int = 52,
+                   ticker: str = "", timeframe: str = "weekly") -> BacktestResult:
+    """Walk-forward backtest on an already-indicator'd frame + per-bar market flags — no
+    network. Shared by backtest() (live) and the Rust-parity dumper (one source of truth)."""
     start = 200  # need the 200 EMA warmed
     trades: list[Trade] = []
     i = start
@@ -109,7 +116,7 @@ def backtest(ticker: str, timeframe: str = "weekly", atr_mult: float = 2.0,
         if pd.isna(row["EMA200"]) or pd.isna(row["ATR"]):
             i += 1
             continue
-        sig = evaluate_row(row, market_ok=bool(market.iloc[i]))
+        sig = evaluate_row(row, market_ok=bool(market[i]))
         if not sig.entry_ok:
             i += 1
             continue
@@ -150,8 +157,10 @@ def backtest(ticker: str, timeframe: str = "weekly", atr_mult: float = 2.0,
             exit_price, exit_idx = float(bar["Close"]), j
 
         r = (exit_price - entry) / risk
+        _ei, _xi = df.index[i], df.index[exit_idx]
         trades.append(Trade(
-            entry_date=str(df.index[i].date()), exit_date=str(df.index[exit_idx].date()),
+            entry_date=(_ei.date().isoformat() if hasattr(_ei, "date") else str(_ei)),
+            exit_date=(_xi.date().isoformat() if hasattr(_xi, "date") else str(_xi)),
             entry=round(entry, 2), exit=round(exit_price, 2), stop=round(stop, 2),
             target=round(target, 2), bars_held=exit_idx - i, outcome=outcome, r=round(r, 2),
         ))

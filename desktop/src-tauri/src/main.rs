@@ -241,6 +241,31 @@ fn main() {
         run_scan_parity(csv, mkt);
         return;
     }
+    // Backtest parity: `stockscanner --backtest-parity <ohlcv.csv> [atr_mult] [max_hold]`
+    if let Some(pos) = args.iter().position(|a| a == "--backtest-parity") {
+        let csv = args.get(pos + 1).expect("--backtest-parity needs a csv path");
+        let atr_mult = args.get(pos + 2).and_then(|s| s.parse().ok()).unwrap_or(2.0);
+        let max_hold = args.get(pos + 3).and_then(|s| s.parse().ok()).unwrap_or(52);
+        let text = std::fs::read_to_string(csv).expect("read csv");
+        let mut d = engine::Ohlcv { open: vec![], high: vec![], low: vec![], close: vec![], volume: vec![] };
+        for (i, line) in text.lines().enumerate() {
+            if i == 0 && line.to_lowercase().contains("close") { continue; }
+            let f: Vec<f64> = line.split(',').map(|s| s.trim().parse::<f64>().unwrap_or(f64::NAN)).collect();
+            if f.len() < 5 { continue; }
+            d.open.push(f[0]); d.high.push(f[1]); d.low.push(f[2]); d.close.push(f[3]); d.volume.push(f[4]);
+        }
+        let r = engine::backtest(&d, atr_mult, max_hold);
+        let pf = if r.profit_factor.is_finite() { format!("{:.2}", r.profit_factor) } else { "null".to_string() };
+        let trades: Vec<String> = r.log.iter().map(|t| format!(
+            "{{\"entry_idx\":{},\"exit_idx\":{},\"entry\":{:.2},\"exit\":{:.2},\"stop\":{:.2},\"target\":{:.2},\"bars_held\":{},\"outcome\":\"{}\",\"r\":{:.2}}}",
+            t.entry_idx, t.exit_idx, t.entry, t.exit, t.stop, t.target, t.bars_held, t.outcome, t.r)).collect();
+        println!(
+            "{{\"bars\":{},\"trades\":{},\"wins\":{},\"losses\":{},\"timeouts\":{},\"win_rate\":{:.1},\"avg_r\":{:.2},\"profit_factor\":{},\"total_r\":{:.2},\"note\":\"{}\",\"log\":[{}]}}",
+            r.bars, r.trades, r.wins, r.losses, r.timeouts, r.win_rate, r.avg_r, pf, r.total_r,
+            r.note.replace('"', "\\\""), trades.join(","),
+        );
+        return;
+    }
     // Live fetch + scan (Rust end-to-end): `stockscanner --fetch-scan <TICKER> <weekly|daily>`
     if let Some(pos) = args.iter().position(|a| a == "--fetch-scan") {
         let ticker = args.get(pos + 1).expect("--fetch-scan needs a ticker");

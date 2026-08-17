@@ -22,6 +22,13 @@ async fn fetch_async(ticker: &str, timeframe: &str) -> Result<Ohlcv, String> {
     let quotes = resp.quotes().map_err(|e| format!("quotes: {e:?}"))?;
     let mut d = Ohlcv { open: vec![], high: vec![], low: vec![], close: vec![], volume: vec![] };
     for q in quotes {
+        // Match Python _fetch's .dropna(): skip any bar with a non-finite price/volume so a
+        // null Yahoo row can't NaN-poison the EMAs or shift the bar count.
+        if ![q.open, q.high, q.low, q.close, q.adjclose].iter().all(|v| v.is_finite())
+            || !(q.volume as f64).is_finite()
+        {
+            continue;
+        }
         let ratio = if q.close != 0.0 { q.adjclose / q.close } else { 1.0 };
         d.open.push(q.open * ratio);
         d.high.push(q.high * ratio);

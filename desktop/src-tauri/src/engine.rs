@@ -373,3 +373,130 @@ pub fn scan_frame(d: &Ohlcv, market_ok: bool, fair_band: f64) -> ScanResult {
         rejection_zones, support, upside_pct, downside_pct, r_multiple,
     }
 }
+
+// ------------------------------------------------------------------------------------
+// Backtest port: walk-forward, matching tools/backtest.backtest_frame.
+// market_ok does not affect entry_ok, so trades are independent of the market series.
+// ------------------------------------------------------------------------------------
+
+pub struct BtTrade {
+    pub entry_idx: usize,
+    pub exit_idx: usize,
+    pub entry: f64,
+    pub exit: f64,
+    pub stop: f64,
+    pub target: f64,
+    pub bars_held: usize,
+    pub outcome: String,
+    pub r: f64,
+}
+
+pub struct BtResult {
+    pub bars: usize,
+    pub trades: usize,
+    pub wins: usize,
+    pub losses: usize,
+    pub timeouts: usize,
+    pub win_rate: f64,
+    pub avg_r: f64,
+    pub profit_factor: f64, // f64::INFINITY when no losing trades
+    pub total_r: f64,
+    pub note: String,
+    pub log: Vec<BtTrade>,
+}
+
+pub fn backtest(d: &Ohlcv, atr_mult: f64, max_hold: usize) -> BtResult {
+    let ind = compute_indicators(d);
+    let n = d.len();
+    let mut trades: Vec<BtTrade> = Vec::new();
+    let mut i = 200; // need the 200 EMA warmed
+    while i + 1 < n {
+        let e200 = ind.ema200[i];
+        let atr_v = ind.atr[i];
+        if !e200.is_finite() || !atr_v.is_finite() {
+            i += 1;
+            continue;
+        }
+        // entry_ok at bar i (regime DISCOUNT + 9/20 reclaim + not overbought)
+        let price = d.close[i];
+        let (e9, e20) = (ind.ema9[i], ind.ema20[i]);
+        let discount = price < e200 * (1.0 - 0.005);
+        let reversal = price > e9 && price > e20 && e9 > e20;
+        let rsi_ok = ind.rsi[i].is_finite() && ind.rsi[i] < 70.0;
+        if !(discount && reversal && rsi_ok) {
+            i += 1;
+            continue;
+        }
+        let entry = price;
+        let target = e200;
+        // recent_low = min low of the prior 10 bars (df["Low"].iloc[max(0,i-10):i].min())
+        let lo0 = i.saturating_sub(10);
+        let recent_low = d.low[lo0..i].iter().cloned().fold(f64::INFINITY, f64::min);
+        let stop = compute_stop(entry, atr_v, e20, Some(recent_low), atr_mult);
+        if stop <= 0.0 || target <= entry {
+            i += 1;
+            continue;
+        }
+        let risk = entry - stop;
+        if (target - entry) / risk < 1.5 {
+            i += 1;
+            continue;
+        }
+        // walk forward
+        let mut exit_idx = (i + max_hold).min(n - 1);
+        let mut exit_price = d.close[exit_idx];
+        let mut outcome = "TIMEOUT".to_string();
+        let jend = (i + max_hold + 1).min(n);
+        for j in (i + 1)..jend {
+            let hit_stop = d.low[j] <= stop; // ambiguous bar -> stop first (checked first)
+            let hit_tgt = d.high[j] >= target;
+            if hit_stop {
+                exit_price = stop;
+                exit_idx = j;
+                outcome = "LOSS".to_string();
+                break;
+            }
+            if hit_tgt {
+                exit_price = target;
+                exit_idx = j;
+                outcome = "WIN".to_string();
+                break;
+            }
+            exit_price = d.close[j];
+            exit_idx = j;
+        }
+        let r = (exit_price - entry) / risk;
+        trades.push(BtTrade {
+            entry_idx: i,
+            exit_idx,
+            entry: py_round(entry, 2),
+            exit: py_round(exit_price, 2),
+            stop: py_round(stop, 2),
+            target: py_round(target, 2),
+            bars_held: exit_idx - i,
+            outcome,
+            r: py_round(r, 2),
+        });
+        i = exit_idx + 1; // no overlapping positions
+    }
+
+    // stats computed on the ROUNDED r (matches Python: rs = [t.r ...])
+    let rs: Vec<f64> = trades.iter().map(|t| t.r).collect();
+    let wins = trades.iter().filter(|t| t.outcome == "WIN").count();
+    let losses = trades.iter().filter(|t| t.outcome == "LOSS").count();
+    let timeouts = trades.iter().filter(|t| t.outcome == "TIMEOUT").count();
+    let total_r = py_round(rs.iter().sum(), 2);
+    let avg_r = if rs.is_empty() { 0.0 } else { py_round(rs.iter().sum::<f64>() / rs.len() as f64, 2) };
+    let win_rate = if trades.is_empty() { 0.0 } else { py_round(100.0 * wins as f64 / trades.len() as f64, 1) };
+    let gross_win: f64 = rs.iter().filter(|&&r| r > 0.0).sum();
+    let gross_loss: f64 = -rs.iter().filter(|&&r| r < 0.0).sum::<f64>();
+    let profit_factor = if gross_loss > 0.0 { py_round(gross_win / gross_loss, 2) } else { f64::INFINITY };
+    let note = if trades.len() < 10 {
+        format!("ONLY {} trades — statistically thin; treat as anecdote, not edge.", trades.len())
+    } else if avg_r > 0.1 {
+        "positive expectancy over a usable sample — but hypothetical, keep logging live.".to_string()
+    } else {
+        "negative/weak expectancy — this rule set did not pay on this ticker historically.".to_string()
+    };
+    BtResult { bars: n, trades: trades.len(), wins, losses, timeouts, win_rate, avg_r, profit_factor, total_r, note, log: trades }
+}
