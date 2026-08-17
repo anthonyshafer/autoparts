@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "StockScanner",
+  "productName": "Swing R",
   "version": "1.4.0",
   "identifier": "com.stockscanner.ema",
   "build": {
@@ -10,7 +10,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "StockScanner — EMA Swing System",
+        "title": "Swingr — EMA Swing System",
         "width": 1800,
         "height": 760,
         "minWidth": 900,

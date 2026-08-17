@@ -59,9 +59,40 @@ fn backtest_json(ticker: &str, timeframe: &str) -> Result<String, String> {
     Ok(serde_json::Value::Array(vec![obj]).to_string())
 }
 
+// Chart series: last ~180 bars of OHLC + the 9/20/200 EMA lines + the scan marker levels.
+fn chart_json(ticker: &str, timeframe: &str) -> Result<String, String> {
+    let d = fetch::fetch(ticker, timeframe)?;
+    if d.len() < 60 {
+        return Err(format!("Only {} {} candles for {}.", d.len(), timeframe, ticker));
+    }
+    let ind = engine::compute_indicators(&d);
+    let mkt = fetch::market_ok(timeframe);
+    let r = engine::scan_frame(&d, mkt, 0.005);
+    let n = d.len();
+    let take = n.min(520); // return plenty of history; the UI viewport handles zoom/pan
+    let s = n - take;
+    let slice = |v: &[f64]| -> Vec<Option<f64>> {
+        v[s..].iter().map(|&x| if x.is_finite() { Some(x) } else { None }).collect()
+    };
+    let j = serde_json::json!({
+        "ticker": ticker.to_uppercase(), "timeframe": timeframe,
+        "ts": &d.ts[s..], "open": &d.open[s..], "high": &d.high[s..],
+        "low": &d.low[s..], "close": &d.close[s..], "volume": &d.volume[s..],
+        "ema9": slice(&ind.ema9), "ema20": slice(&ind.ema20), "ema200": slice(&ind.ema200),
+        "markers": { "take_profit": r.take_profit, "entry": r.entry, "stop_loss": r.stop_loss,
+                     "rejection_zones": r.rejection_zones, "support": r.support }
+    });
+    Ok(j.to_string())
+}
+
 #[tauri::command]
 fn scan(ticker: String, timeframe: String) -> Result<String, String> {
     scan_json(&ticker, &timeframe)
+}
+
+#[tauri::command]
+fn chart(ticker: String, timeframe: String) -> Result<String, String> {
+    chart_json(&ticker, &timeframe)
 }
 
 #[tauri::command]
@@ -246,6 +277,12 @@ fn main() {
         match backtest_json(t, tf) { Ok(s) => println!("{s}"), Err(e) => { eprintln!("{e}"); std::process::exit(1); } }
         return;
     }
+    if let Some(pos) = args.iter().position(|a| a == "--chart-json") {
+        let t = args.get(pos + 1).expect("ticker");
+        let tf = args.get(pos + 2).map(|s| s.as_str()).unwrap_or("weekly");
+        match chart_json(t, tf) { Ok(s) => println!("{s}"), Err(e) => { eprintln!("{e}"); std::process::exit(1); } }
+        return;
+    }
     // Live fetch + scan (Rust end-to-end): `stockscanner --fetch-scan <TICKER> <weekly|daily>`
     if let Some(pos) = args.iter().position(|a| a == "--fetch-scan") {
         let ticker = args.get(pos + 1).expect("--fetch-scan needs a ticker");
@@ -270,7 +307,7 @@ fn main() {
         return;
     }
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![scan, backtest, save_text, open_url, choose_folder])
+        .invoke_handler(tauri::generate_handler![scan, chart, backtest, save_text, open_url, choose_folder])
         .run(tauri::generate_context!())
         .expect("error while running StockScanner");
 }

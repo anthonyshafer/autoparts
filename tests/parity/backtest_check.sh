@@ -5,8 +5,8 @@
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
-BIN="desktop/src-tauri/target/debug/stockscanner"
-[ -x "$BIN" ] || ( cd desktop/src-tauri && cargo build --bin stockscanner --quiet )
+BIN="desktop/src-tauri/target/debug/swingr"
+[ -x "$BIN" ] || ( cd desktop/src-tauri && cargo build --bin swingr --quiet )
 
 # ticker timeframe atr_mult max_hold
 CASES=(

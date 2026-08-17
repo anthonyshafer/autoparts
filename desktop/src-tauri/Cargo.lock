@@ -3117,19 +3117,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
 
 [[package]]
-name = "stockscanner"
-version = "1.3.0"
-dependencies = [
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "time",
- "tokio",
- "yahoo_finance_api",
-]
-
-[[package]]
 name = "string_cache"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3174,6 +3161,19 @@ dependencies = [
  "base64 0.21.7",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "swingr"
+version = "1.4.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "time",
+ "tokio",
+ "yahoo_finance_api",
 ]
 
 [[package]]
