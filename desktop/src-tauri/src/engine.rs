@@ -204,19 +204,15 @@ pub fn compute_indicators(d: &Ohlcv) -> Indicators {
 // (matches tools/strategy.evaluate_row + ema_analyzer.analyze_frame).
 // ------------------------------------------------------------------------------------
 
-/// Python round(x, nd): round-half-to-even (banker's rounding).
-pub fn py_round(x: f64, nd: i32) -> f64 {
-    if !x.is_finite() { return x; }
-    let m = 10f64.powi(nd);
-    let v = x * m;
-    let f = v.floor();
-    let diff = v - f;
-    let r = if (diff - 0.5).abs() < 1e-9 {
-        if (f as i64) % 2 == 0 { f } else { f + 1.0 }
-    } else {
-        v.round()
-    };
-    r / m
+/// Python round(x, nd). Python rounds the TRUE double to n decimals, ties-to-even, via
+/// correct decimal rounding (dtoa) — NOT round(x*10^n), which manufactures false ties.
+/// Rust's float formatting does the exact same correct-decimal, ties-to-even rounding, so
+/// format-then-parse matches Python's round() bit-for-bit (e.g. 66.045->66.05, 0.125->0.12).
+pub fn py_round(x: f64, nd: usize) -> f64 {
+    if !x.is_finite() {
+        return x;
+    }
+    format!("{:.*}", nd, x).parse::<f64>().unwrap_or(x)
 }
 fn cents(x: f64) -> i64 { (x * 100.0).round() as i64 }
 fn dedup_sort(mut v: Vec<f64>, ascending: bool) -> Vec<f64> {

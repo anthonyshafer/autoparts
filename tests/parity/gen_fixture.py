@@ -51,3 +51,30 @@ n = 16
 t = np.arange(n)
 c = 100.0 + np.sin(t) + 0.5 * t
 write("short16.csv", c - 0.1, c + 0.3, c - 0.3, c, np.full(n, 500_000.0))
+
+# buysetup: long decline then a rally -> DISCOUNT regime + 9/20 reclaim (BUY-side branches).
+# Last close set to a half-cent (66.045) to exercise the rounding boundary py_round must
+# match Python on. Swing high/low also placed on .005 boundaries.
+n = 260
+c = np.empty(n)
+c[:230] = 120.0 - 0.27 * np.arange(230)          # 120 -> ~58
+c[230:] = c[229] + np.linspace(0.0, 8.0, 30)      # rally ~58 -> ~66
+c[-1] = 66.045                                     # rounding boundary
+h = c + 0.5
+l = c - 0.5
+h[120] = 64.005                                    # boundary swing high
+l[60] = 55.005                                     # boundary swing low
+write("buysetup.csv", c - 0.1, h, l, c, np.full(n, 1_000_000.0))
+
+# cautionsetup: steeper final rally so RSI>=70 (entry_ok off) -> CAUTION/HOLD-FIRE branch.
+c2 = c.copy()
+c2[230:] = c[229] + np.linspace(0.0, 12.0, 30)
+c2[-1] = 70.045
+write("cautionsetup.csv", c2 - 0.1, c2 + 0.5, c2 - 0.5, c2, np.full(n, 1_000_000.0))
+
+# longflat2: higher magnitude (~257) with a 40-bar flat tail (Kahan-SMA generalization).
+n = 300
+t = np.arange(n)
+c3 = 250.0 + 10.0 * np.sin(t / 9.0) + 0.03 * t
+c3[-40:] = c3[-40]
+write("longflat2.csv", c3 - 0.2, c3 + 0.5, c3 - 0.5, c3, 1_000_000.0 + 100_000.0 * np.sin(t / 6.0))
