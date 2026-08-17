@@ -171,7 +171,10 @@ def backtest_frame(df, market, atr_mult: float = 2.0, max_hold: int = 52,
     timeouts = sum(1 for t in trades if t.outcome == "TIMEOUT")
     rs = [t.r for t in trades]
     total_r = round(sum(rs), 2)
-    avg_r = round(np.mean(rs), 2) if rs else 0.0
+    # cast np.mean's numpy.float64 to a native float FIRST: round(np.float64, 2) uses numpy's
+    # decimal rounding, which differs from native round() (and every other stat here) on
+    # half-cent means (e.g. -0.355). float() makes avg_r round consistently with total_r/r.
+    avg_r = round(float(np.mean(rs)), 2) if rs else 0.0
     win_rate = round(100 * wins / len(trades), 1) if trades else 0.0
     gross_win = sum(r for r in rs if r > 0)
     gross_loss = -sum(r for r in rs if r < 0)
