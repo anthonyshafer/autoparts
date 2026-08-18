@@ -22,9 +22,13 @@ binary — **no Python, venv, or repo needed at runtime.** The Rust engine is a 
 of the Python tool below, verified bar-for-bar by the parity suite in `tests/parity/`
 (indicators, scan verdict/levels/reasons, and backtest all match the Python reference).
 
-- **Download:** the Releases page (a `.dmg` containing `Swing R.app`), built by
-  `.github/workflows/build-desktop.yml`. **macOS only** — there is no Windows build.
-- **Build locally:** `cd desktop && cargo tauri build` → `desktop/src-tauri/target/release/bundle/`.
+- **Download:** the Releases page — a `.dmg` (macOS, contains `Swing R.app`) or a
+  `.exe` NSIS installer (Windows), both built by `.github/workflows/build-desktop.yml`.
+- **Build locally (macOS):** `cd desktop && cargo tauri build` → `desktop/src-tauri/target/release/bundle/`.
+- **Build locally (Windows):** on Windows with the Rust toolchain + Node, run
+  `cd desktop && cargo tauri build --bundles nsis` → the `.exe` lands in
+  `desktop/src-tauri/target/release/bundle/nsis/`. Note: you cannot cross-compile the
+  Windows `.exe` from macOS; use a Windows machine or the CI workflow's `windows-latest` runner.
 - The Python CLI below remains the reference implementation and the parity oracle.
 
 ---
@@ -46,13 +50,14 @@ Give it a ticker; it returns:
 ### macOS app — `Swing R.app`, nothing to install (easiest)
 
 Swing R is a **native Rust + Tauri** app. The whole engine is compiled into the binary — there
-is **no Python at runtime, no venv, and nothing to install.** It's **macOS only** right now
-(no Windows build exists).
+is **no Python at runtime, no venv, and nothing to install.** Native builds exist for both
+**macOS** (`.dmg`) and **Windows** (`.exe` NSIS installer).
 
-- **Auto-built:** the GitHub Actions workflow (`.github/workflows/build-desktop.yml`) builds a
-  `.dmg` (and `.app`) on GitHub's Mac runners → **Actions** tab → latest run → download the
-  **SwingR-desktop-dmg** artifact. Or tag a release (`git tag v1.0 && git push --tags`) to get
-  a clean Releases download page.
+- **Auto-built:** the GitHub Actions workflow (`.github/workflows/build-desktop.yml`) builds
+  the `.dmg`/`.app` on a Mac runner and the `.exe` on a Windows runner → **Actions** tab →
+  latest run → download the **SwingR-desktop-macos-latest** or **SwingR-desktop-windows-latest**
+  artifact. Or tag a release (`git tag v1.0 && git push --tags`) to get a clean Releases
+  download page with both installers.
 - **Build it yourself:** on a Mac with the Rust toolchain, run
   `cd desktop && cargo tauri build` → the `.dmg`/`.app` land in
   `desktop/src-tauri/target/release/bundle/`.
