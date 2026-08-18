@@ -287,8 +287,11 @@
     background:color-mix(in srgb, var(--tabc,var(--dim)) 16%, var(--panel));}
   .tab:hover{background:color-mix(in srgb, var(--tabc,var(--dim)) 26%, var(--panel));}
   .tab.active{color:#fff;font-weight:600;background:color-mix(in srgb, var(--tabc,var(--dim)) 46%, var(--panel));border-color:color-mix(in srgb, var(--tabc,var(--dim)) 70%, transparent);}
-  .tab .glyph{width:10px;height:10px;border-radius:3px;flex:0 0 auto;background:var(--tabc,var(--dim));opacity:.9;}
-  .tab.active .glyph{display:none;}
+  .tab .glyph{position:relative;width:14px;height:14px;border-radius:4px;flex:0 0 auto;background:var(--tabc,var(--dim));opacity:.9;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .tab .glyph svg{width:10px;height:10px;opacity:0;transition:opacity .1s;color:var(--hi);}
+  .tab:hover .glyph svg,.tab.active .glyph svg{opacity:1;}
+  .tab .glyph:hover{background:var(--down);}
+  .tab .glyph:hover svg{opacity:1;color:var(--on-down);}
   .tab .x{display:none;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;background:rgba(255,255,255,.14);}
   .tab.active .x,.tab:hover .x{display:flex;} .tab .x:hover{background:var(--down);color:var(--on-down);}
   .tab .x svg{width:11px;height:11px;}
@@ -297,6 +300,8 @@
   .tab .r svg{width:12px;height:12px;}
   .tab.addtab{color:var(--accent);padding:0 12px;background:transparent;font-size:1.231em;}
   .tab.addtab:hover{background:var(--panel2);}
+  .tab.findr-pill{color:var(--accent);padding:0 12px;background:transparent;border:1px solid color-mix(in srgb,var(--accent) 55%,transparent);font-weight:700;letter-spacing:1.5px;font-size:0.77em;flex:0 0 auto;}
+  .tab.findr-pill:hover{background:var(--accent);color:var(--accent-fg);}
   #status{padding:5px 12px;font-size:0.846em;color:var(--dim);border-bottom:1px solid var(--grid);background:var(--panel);}
   #status b{color:var(--accent);font-weight:600;}
   .body{flex:1;display:flex;min-height:0;}
@@ -339,6 +344,9 @@
   aside#help dd{margin:2px 0 0;color:var(--dim);font-size:0.923em;line-height:1.5;}
   pre{margin:0;white-space:pre-wrap;line-height:1.55;color:var(--fg);}
   .up{color:var(--up);}.down{color:var(--down);}.warn{color:var(--warn);}.dim{color:var(--dim);}.hi{color:var(--hi);}
+  /* verdict polarity: BUY/ENTER/LONG green, AVOID/SELL/SHORT red, WATCH/WAIT/NEUTRAL/HOLD amber */
+  .v-buy{color:var(--up);}.v-avoid{color:var(--down);}.v-watch{color:var(--warn);}
+  .vbacking.v-buy{border-left-color:var(--up);}.vbacking.v-avoid{border-left-color:var(--down);}.vbacking.v-watch{border-left-color:var(--warn);}
   /* KPI grid */
   .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:8px;margin-bottom:16px;}
   .cell{border:1px solid var(--grid);border-left:2px solid var(--accent);padding:9px 11px;background:var(--panel);}
@@ -408,6 +416,51 @@
   .ladder .lad-check label{display:flex;gap:8px;align-items:flex-start;color:var(--fg);padding:4px 0;cursor:pointer;font-size:0.92em;}
   .ladder .lad-check input{width:auto;margin-top:2px;}
   .ladder .lad-check .man-note{color:var(--dim);font-size:0.8em;font-style:italic;margin-top:6px;}
+  .ladder .lad-check .cv-panel{margin:2px 0 4px 24px;font-size:0.86em;color:var(--dim);}
+  .ladder .lad-check .cv-loading{color:var(--dim);font-style:italic;}
+  .ladder .lad-check .cv-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 12px;margin:2px 0 4px;}
+  .ladder .lad-check .cv-grid .cvk{color:var(--dim);font-size:0.82em;}
+  .ladder .lad-check .cv-grid .cvv{color:var(--hi);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+  .ladder .lad-check .cv-read{color:var(--fg);line-height:1.4;margin-top:4px;}
+  .ladder .lad-check .cv-newshead{color:var(--dim);font-size:0.82em;margin:2px 0 4px;}
+  .ladder .lad-check .cv-news{padding:2px 0;line-height:1.4;}
+  .ladder .lad-check .cv-news .cvd{color:var(--dim);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:0.82em;}
+  .ladder .lad-check .cv-news .cvsrc{color:var(--dim);}
+  .ladder .lad-check .cv-link{color:var(--accent);cursor:pointer;text-decoration:none;}
+  .ladder .lad-check .cv-link:hover{text-decoration:underline;}
+  .ladder .lad-check .cv-err{color:var(--dim);font-style:italic;}
+  @media (max-width:520px){.ladder .lad-check .cv-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  /* Psych Levels — round-number heuristic; reuses .risk panel chrome so all 16 skins style it. Colors are theme vars only. */
+  .psych .psych-note{color:var(--dim);font-size:0.82em;line-height:1.45;margin:2px 0 10px;display:none;}
+  body.help-on .psych .psych-note{display:block;}
+  .psych .psych-note b{color:var(--fg);font-weight:700;}
+  .psych .psych-empty{padding:6px 4px;}
+  .psych .pstrip{position:relative;height:58px;margin:14px 0 28px;border-bottom:1px solid var(--grid);}
+  .psych .ptick{position:absolute;bottom:0;width:2px;background:var(--fg);transform:translateX(-1px);}
+  .psych .ptick.t-subminor{opacity:0.16;}
+  .psych .ptick.t-minor{opacity:0.3;}
+  .psych .ptick.t-moderate{opacity:0.52;}
+  .psych .ptick.t-strong{opacity:0.74;}
+  .psych .ptick.t-major{opacity:0.9;}
+  .psych .ptick.t-extreme{opacity:1;}
+  .psych .ptick.conf{background:var(--accent2);width:3px;opacity:1;box-shadow:0 0 0 1px var(--accent2);}
+  .psych .plabel{position:absolute;top:100%;margin-top:3px;font-size:0.62em;color:var(--dim);transform:translateX(-50%);white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .psych .plabel.conf{color:var(--accent2);}
+  .psych .pcur{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--up);transform:translateX(-1px);}
+  .psych .pcur .pcurlab{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);font-size:0.62em;color:var(--up);white-space:nowrap;margin-bottom:1px;font-variant-numeric:tabular-nums;}
+  .psych .plist{display:flex;flex-direction:column;margin-top:8px;}
+  .psych .prow{display:grid;grid-template-columns:64px 84px 1fr auto;gap:10px;align-items:center;padding:5px 4px;border-top:1px dashed var(--grid);}
+  .psych .prow:first-child{border-top:none;}
+  .psych .prow .plvl{color:var(--hi);font-weight:700;font-variant-numeric:tabular-nums;}
+  .psych .prow.conf .plvl{color:var(--accent2);}
+  .psych .sbar{height:8px;background:var(--panel2);border:1px solid var(--grid);position:relative;}
+  .psych .sbar>span{position:absolute;left:0;top:0;bottom:0;background:var(--accent);}
+  .psych .prow.conf .sbar>span{background:var(--accent2);}
+  .psych .pmid{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;}
+  .psych .ptier{font-size:0.72em;text-transform:uppercase;letter-spacing:0.5px;color:var(--dim);}
+  .psych .pboost{color:var(--accent2);font-weight:700;}
+  .psych .pconf{font-size:0.72em;color:var(--accent2);}
+  .psych .pdist{text-align:right;font-size:0.85em;color:var(--dim);font-variant-numeric:tabular-nums;}
   table{width:100%;border-collapse:collapse;font-size:0.923em;}
   thead th{color:var(--dim);text-align:left;padding:7px 12px;text-transform:uppercase;font-size:0.769em;letter-spacing:1.5px;font-weight:600;border-bottom:1px solid var(--grid);background:var(--panel2);position:sticky;top:0;cursor:pointer;user-select:none;}
   thead th.num,tbody td.num{text-align:right;font-variant-numeric:tabular-nums;}
@@ -436,6 +489,36 @@
   .slider input[type=range]{width:100%;accent-color:var(--accent);margin-top:8px;}
   .scenbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
   .ts{font-size:0.846em;color:var(--dim);}
+  /* FINDR — bulk screener */
+  .findr{display:flex;flex-direction:column;gap:12px;}
+  .findr-intro{font-size:0.9em;line-height:1.4;max-width:70ch;}
+  .findr-ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .findr-ctl label{font-size:0.72em;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);}
+  .findr-ctl select{min-width:64px;}
+  .findr-note{font-size:0.8em;max-width:70ch;}
+  .findr-prog{display:flex;flex-direction:column;gap:6px;}
+  .findr-bar{height:8px;border-radius:4px;background:var(--field);border:1px solid var(--grid);overflow:hidden;}
+  .findr-fill{height:100%;background:var(--accent);width:0;transition:width .3s ease;}
+  .findr-progtxt{font-size:0.82em;font-variant-numeric:tabular-nums;}
+  .findr-log{max-height:200px;overflow-y:auto;border:1px solid var(--grid);background:var(--panel2);padding:4px 8px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:0.78em;line-height:1.55;font-variant-numeric:tabular-nums;}
+  .findr-log:empty{display:none;}
+  .findr-logline{white-space:nowrap;}
+  .findr-log-buy{color:var(--up);font-weight:600;}
+  .findr-log-skip{color:var(--dim);}
+  .findr-log-def{color:var(--fg);opacity:.82;}
+  .findr-run.findr-stop{background:var(--down);border-color:var(--down);color:var(--on-down);}
+  .findr-run.findr-stop:hover{background:var(--down);border-color:var(--down);color:var(--on-down);filter:brightness(1.12);}
+  @keyframes findrspin{to{transform:rotate(360deg);}}
+  .tab .findr-spin{display:inline-flex;align-items:center;justify-content:center;color:var(--accent);}
+  .tab .findr-spin svg{width:12px;height:12px;animation:findrspin .8s linear infinite;}
+  .findr-tablewrap{max-height:60vh;overflow:auto;}
+  .findr-table thead th.findr-th{cursor:pointer;white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .findr-table thead th.findr-th:hover{color:var(--fg);}
+  .findr-table thead th.findr-th.active{color:var(--accent);}
+  .findr-table tbody tr[data-sym]{cursor:pointer;}
+  .findr-table tbody tr[data-sym]:hover{background:var(--rowhover);box-shadow:inset 2px 0 0 var(--accent);}
+  .findr-table td.val{color:var(--hi);font-weight:700;}
+  .findr-found{font-size:0.82em;}
   /* context menu */
   #ctx{position:fixed;z-index:60;background:var(--panel);border:1px solid var(--accent);border-radius:3px;padding:8px;display:none;box-shadow:0 6px 20px var(--shadow-color);}
   #ctx .swatches{display:grid;grid-template-columns:repeat(6,20px);gap:5px;margin-bottom:8px;}
@@ -477,6 +560,7 @@
   .menu .mi{padding:7px 10px;cursor:pointer;font-size:0.923em;color:var(--fg);border-radius:2px;}
   .menu .mi:hover{background:var(--accent);color:var(--accent-fg);}
   .menu .mi.on{color:var(--accent);} .menu .mi.on:hover{color:var(--accent-fg);}
+  .menu .mi.sep{border-top:1px solid var(--grid);margin-top:3px;padding-top:8px;}
   #prefsBox .pf-preview{margin:16px 0 8px;padding:12px;border:1px solid var(--grid);background:var(--bg);color:var(--hi);text-align:center;font-size:1.231em;letter-spacing:1px;}
   #prefsBox .pf-note{font-size:0.846em;line-height:1.5;margin-bottom:16px;}
   #prefsBox .pf-btns{display:flex;gap:10px;justify-content:flex-end;}
@@ -550,7 +634,11 @@
     <div class="mi" data-loc="downloads">Downloads</div>
     <div class="mi" data-loc="desktop">Desktop</div>
     <div class="mi" data-loc="__choose__">Choose Folder…</div>
+    <div class="mi sep" data-act="exportall">Export All (data set)</div>
+    <div class="mi" data-act="import">Import data set…</div>
   </div>
+  <input id="importFile" type="file" accept="application/json,.json" style="display:none">
+  <a id="dlAnchor" style="display:none"></a>
   <div class="tabsrow">
     <button id="navBtn" class="icon" data-i="panel" title="Collapse / expand tabs (sidebar)"></button>
     <div class="sbsearch"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="sbq" placeholder="Search tabs…" /></div>
@@ -718,27 +806,37 @@
       :"Ticker log — every scan per ticker, with notes saved against each run.");
   }
 
-  function newTab(kind="scan"){const id="t"+(++seq);
-    const t={id,kind,title:kind==="scenario"?"Scenario":"New",color:PALETTE[(seq-1)%12],data:null,plain:"",ts:null,
+  function newTab(kind="new"){const id="t"+(++seq);
+    const t={id,kind,title:kind==="scenario"?"Scenario":kind==="findr"?"FINDR":"New",color:PALETTE[(seq-1)%12],data:null,plain:"",ts:null,
       scen:{...SCEN_DEFAULTS},locks:{},notes:"",ticker:"",objective:"",
       onboard:kind==="scenario"};   // scenario tabs open on the onboarding step first
     tabs.push(t);active=id;mode="tabs";renderTabs();renderView();persist();return t;}
-  function closeTab(id){const i=tabs.findIndex(t=>t.id===id);if(i<0)return;tabs.splice(i,1);if(active===id)active=tabs.length?tabs[Math.max(0,i-1)].id:null;if(!tabs.length)newTab("scan");else{renderTabs();renderView();}persist();}
+  function closeTab(id){const i=tabs.findIndex(t=>t.id===id);if(i<0)return;tabs.splice(i,1);if(active===id)active=tabs.length?tabs[Math.max(0,i-1)].id:null;if(!tabs.length)newTab();else{renderTabs();renderView();}persist();}
   const cur=()=>tabs.find(t=>t.id===active);
   const escapeHtml=(s)=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+  // Map a verdict's FIRST word to a polarity CSS class (see .v-buy/.v-avoid/.v-watch).
+  // BUY/STRONG BUY/ENTER/LONG -> green; AVOID/SELL/SHORT -> red;
+  // WATCH/WAIT/NEUTRAL/HOLD and anything unrecognized -> amber (default).
+  function verdictClass(v){
+    const w=String(v||"").trim().toUpperCase().replace(/^STRONG\s+/,"").split(/[^A-Z]+/)[0]||"";
+    if(w==="BUY"||w==="ENTER"||w==="LONG")return "v-buy";
+    if(w==="AVOID"||w==="SELL"||w==="SHORT")return "v-avoid";
+    return "v-watch";
+  }
 
   function renderTabs(){
     const bar=$("tabbar");bar.innerHTML="";
     tabs.forEach(t=>{const el=document.createElement("div");el.className="tab"+(t.id===active&&mode==="tabs"?" active":"");
       el.style.setProperty("--tabc",t.color);
-      const canRescan=!!t.data||(t.kind==="scenario"&&!t.onboard);
-      el.innerHTML=`<span class="glyph"></span><span>${escapeHtml(t.title)}</span>`
-        +(canRescan?`<span class="r" title="Rescan this tab">${ic("reset")}</span>`:"")
-        +`<span class="x" title="Close">${ic("close")}</span>`;
+      const canRescan=(!!t.data||(t.kind==="scenario"&&!t.onboard))&&t.kind!=="findr";
+      const spin=(t.kind==="findr"&&t.running)?`<span class="findr-spin" title="Scanning…">${ic("reset")}</span>`:"";
+      el.innerHTML=`<span class="glyph" title="Close">${ic("close")}</span>`+spin+`<span>${escapeHtml(t.title)}</span>`
+        +(canRescan?`<span class="r" title="Rescan this tab">${ic("reset")}</span>`:"");
       // clicking a tab always returns to tab view — the views are mutually exclusive
-      el.onclick=(e)=>{if(e.target.closest(".x")){closeTab(t.id);}else if(e.target.closest(".r")){rescanTab(t);}else{active=t.id;setMode("tabs");}};
+      el.onclick=(e)=>{if(e.target.closest(".glyph")){closeTab(t.id);}else if(e.target.closest(".r")){rescanTab(t);}else{active=t.id;setMode("tabs");}};
       el.oncontextmenu=(e)=>{e.preventDefault();openCtx(e.clientX,e.clientY,t);};bar.appendChild(el);});
-    const add=document.createElement("div");add.className="tab addtab";add.innerHTML=ic("add");add.title="New tab";add.onclick=()=>newTab("scan");bar.appendChild(add);
+    const add=document.createElement("div");add.className="tab addtab";add.innerHTML=ic("add");add.title="New tab";add.onclick=()=>newTab();bar.appendChild(add);
+    const findrPill=document.createElement("div");findrPill.className="tab findr-pill";findrPill.textContent="FINDR";findrPill.title="Bulk swing screener — scan a letter range for BUY setups";findrPill.onclick=()=>newTab("findr");bar.appendChild(findrPill);
     if(tabLayout==="side")renderSidebar();   // keep the sidebar in step with tab state
   }
 
@@ -809,9 +907,10 @@
     if(!t){el.innerHTML="";return;}
     if(t.kind==="scenario"&&t.onboard){el.innerHTML=onboardHTML(t);wireOnboard(t);return;}
     if(t.kind==="scenario"){el.innerHTML=scenarioHTML(t)+notesHTML(t);wireScenario(t);recalcScenario(t,false);wireNotes(t);return;}
+    if(t.kind==="findr"){el.innerHTML=findrHTML(t);wireFindr(el,t);return;}
     if(!t.data){el.innerHTML=emptyCanvasHTML(t)+notesHTML(t);wireEmptyCanvas(t);wireNotes(t);return;}
     const refs=refLinksHTML(t.ticker);
-    if(t.kind==="scan"){el.innerHTML=scanHTML(t.data)+ladderHTML(t.data)+chartBlockHTML()+riskPanelHTML(t.data)+tsLine(t)+refs+notesHTML(t);wireRisk(el,t.data);wireLadder(el,t.data);loadChart(el,t);wireRefLinks(el);wireNotes(t);return;}
+    if(t.kind==="scan"){el.innerHTML=scanHTML(t.data)+ladderHTML(t.data)+psychHTML(t.data)+chartBlockHTML()+riskPanelHTML(t.data)+tsLine(t)+refs+notesHTML(t);wireRisk(el,t.data);wireLadder(el,t.data);loadChart(el,t);wireRefLinks(el);wireNotes(t);return;}
     else el.innerHTML=backtestHTML(t.data)+tsLine(t)+refs+notesHTML(t);
     wireRefLinks(el);wireNotes(t);
   }
@@ -835,7 +934,7 @@
   }
   function subtitleOf(t){
     if(!t.data&&t.kind!=="scenario")return "new tab";   // not run yet — no misleading "scan"
-    const bits=[t.kind];
+    const bits=[];
     if(t.kind==="scenario"&&t.objective)bits.push(t.objective.slice(0,34));
     if(t.ts)bits.push(t.ts.replace(/:\d\d\s/," ").replace(/,/,""));
     if(t.notes&&t.notes.trim())bits.push("• noted");
@@ -894,8 +993,7 @@
   function dtable(rows){return `<div class="dtwrap"><table><tbody>${rows.map(([k,v,c])=>`<tr><td class="lbl">${k}</td><td class="val num ${c||""}">${v}</td></tr>`).join("")}</tbody></table></div>`;}
 
   function scanHTML(a){
-    const vc=a.verdict.toLowerCase();const vcolor=vc.includes("buy")&&!vc.includes("avoid")?"up":vc.includes("avoid")?"down":"warn";
-    const kp=[["Verdict",a.verdict,vcolor],["Price",fmtMoney(a.price),""],["Regime",a.regime,a.regime==="DISCOUNT"?"up":a.regime==="PREMIUM"?"down":"warn"],
+    const kp=[["Verdict",a.verdict,verdictClass(a.verdict)],["Price",fmtMoney(a.price),""],["Regime",a.regime,a.regime==="DISCOUNT"?"up":a.regime==="PREMIUM"?"down":"warn"],
       ["Take-profit",fmtMoney(a.take_profit)+" ("+(a.upside_pct>=0?"+":"")+a.upside_pct+"%)",cls(a.upside_pct)],["Stop-loss",fmtMoney(a.stop_loss)+" ("+a.downside_pct+"%)","down"],["R-multiple",a.r_multiple,cls(a.r_multiple)]];
     const tbl=dtable([["EMA 9",fmtMoney(a.ema9)],["EMA 20",fmtMoney(a.ema20)],["EMA 200 (target)",fmtMoney(a.ema200),"warn"],["RSI",a.rsi],["ATR",fmtMoney(a.atr)],["Setup quality",a.setup_quality],
       ["Rejection zones",a.rejection_zones.map(fmtMoney).join("  ")||"n/a"],["Support",a.support.map(fmtMoney).join("  ")||"n/a"]]);
@@ -934,7 +1032,7 @@
     } else {
       s=`Levels below trace to the live scan fields.`;
     }
-    return `<div class="vbacking">${s}</div>`;
+    return `<div class="vbacking ${verdictClass(a.verdict)}">${s}</div>`;
   }
 
   // build ordered rungs from live scan fields (top rung = highest level)
@@ -1013,13 +1111,95 @@
     try{const raw=localStorage.getItem("ss_conviction_"+tk);if(raw)saved=Object.assign(saved,JSON.parse(raw));}catch(e){}
     const check=`<div class="lad-check"><div class="ct">Conviction checklist (you fill these in)</div>
       <label><input type="checkbox" class="cv-fund"${saved.fundamentals?" checked":""}> Fundamentals reviewed (P/E, forward P/E, valuation)</label>
+      <div class="cv-panel fund-panel"><div class="cv-loading">Loading fundamentals…</div></div>
       <label><input type="checkbox" class="cv-cat"${saved.catalyst?" checked":""}> Company catalyst — what it's physically doing (news / articles)</label>
+      <div class="cv-panel news-panel"><div class="cv-loading">Loading news…</div></div>
       <label><input type="checkbox" class="cv-tech" disabled${triggerMet?" checked":""}> Technical stage — 9/20 reclaim ${triggerMet?"MET":"not yet"} (auto, read-only)</label>
-      <div class="man-note">You fill these in — the app doesn't fetch fundamentals or news.</div></div>`;
+      <div class="man-note">Data is fetched to help you decide — you still tick each box to confirm you reviewed it.</div></div>`;
     return badge+`<div class="rungs">${rows}${curRow}</div>`+check;
   }
   function ladderHTML(a){
     return `<div class="risk ladder"><div class="rt">The Gauntlet — Setup Ladder</div><div class="lad-body">${ladderInner(a,null,null)}</div></div>`;
+  }
+  // ---- Psych Levels: round-number resistance per dollar (descriptive heuristic, never predictive) ----
+  const PTIER_NAMES=["subminor","minor","moderate","strong","major","extreme"];
+  // Component 1: "rounder" numbers score higher — monotonic in roundness
+  function psychScore(L){let s=1;if(L%5===0)s+=1;if(L%10===0)s+=2;if(L%25===0)s+=1;if(L%50===0)s+=2;if(L%100===0)s+=3;return s;}
+  function psychRank(sc){return sc>=8?5:sc>=6?4:sc>=4?3:sc>=2?2:1;} // 1=minor 2=moderate 3=strong 4=major 5=extreme
+  function psychLevels(a,close){
+    const px=ladPrice(a,close);
+    const e9=_num(a.ema9),e20=_num(a.ema20),e200=_num(a.ema200);
+    const entry=_num(a.entry),tp=_num(a.take_profit);
+    const rz=(Array.isArray(a.rejection_zones)?a.rejection_zones:[]).map(_num).filter(v=>v!=null);
+    if(px==null)return null;
+    const loSrc=[px,e9,entry].filter(v=>v!=null);
+    const hiSrc=[e200,tp,...rz].filter(v=>v!=null);
+    if(!loSrc.length||!hiSrc.length)return null;
+    let lower=Math.floor(Math.min(...loSrc))-2;
+    let upper=Math.ceil(Math.max(...hiSrc))+2;
+    if(lower<0)lower=0;
+    if(upper<=lower)upper=lower+1;
+    const windowSize=upper-lower;
+    // Component 2: confluence refs — round number that ALSO lines up with a live technical level is a firmer wall
+    const refs=[];
+    if(e9!=null)refs.push([e9,"+9w EMA"]);
+    if(e20!=null)refs.push([e20,"+20w EMA"]);
+    if(e200!=null)refs.push([e200,"+200w EMA"]);
+    rz.forEach(z=>refs.push([z,"+rej "+fmtMoney(z)]));
+    const levels=[];
+    for(let L=lower;L<=upper;L++){
+      if(L<=0)continue;
+      const sc=psychScore(L), rank=psychRank(sc);
+      const conf=[]; refs.forEach(([v,nm])=>{ if(Math.abs(v-L)/L<=0.0075)conf.push(nm); });
+      const confluent=conf.length>0;
+      const effRank=Math.min(5,rank+(confluent?1:0)); // confluence boosts effective strength one tier
+      levels.push({L,score:sc,rank,effRank,tier:PTIER_NAMES[effRank],baseTier:PTIER_NAMES[rank],confluent,conf,dist:pctFrom(px,L),half:false});
+    }
+    // half-dollar sub-minor ticks only for a tight window (avoids clutter)
+    if(windowSize<=25){
+      for(let L=lower;L<upper;L++){ if(L<0)continue; const H=L+0.5; if(H<=lower||H>=upper)continue;
+        levels.push({L:H,score:0,rank:0,effRank:0,tier:"subminor",baseTier:"subminor",confluent:false,conf:[],dist:pctFrom(px,H),half:true}); }
+    }
+    levels.sort((x,y)=>x.L-y.L);
+    return {px,lower,upper,windowSize,levels};
+  }
+  function psychInner(a,close){
+    const D=psychLevels(a,close);
+    if(!D)return `<div class="psych-empty dim">Not enough price data for psych levels.</div>`;
+    const {px,lower,upper,windowSize,levels}=D;
+    const span=(upper-lower)||1, posOf=(v)=>((v-lower)/span*100);
+    const TIERH={subminor:14,minor:26,moderate:44,strong:66,major:86,extreme:100};
+    const WFILL={subminor:12,minor:20,moderate:40,strong:60,major:80,extreme:100};
+    // (a) per-dollar strip — height + opacity scale with strength; confluent ticks stand out in --accent2
+    const ticks=levels.map(lv=>{
+      const left=posOf(lv.L), h=TIERH[lv.tier]||20;
+      const cls="ptick t-"+lv.tier+(lv.confluent?" conf":"");
+      const t=`$${lv.L} ${lv.tier}${lv.conf.length?" "+lv.conf.join(" "):""}`;
+      return `<div class="${cls}" style="left:${left.toFixed(2)}%;height:${h}%" title="${escapeHtml(t)}"></div>`;
+    }).join("");
+    const labels=levels.filter(lv=>!lv.half&&(lv.effRank>=3||lv.confluent)).map(lv=>
+      `<div class="plabel${lv.confluent?" conf":""}" style="left:${posOf(lv.L).toFixed(2)}%">$${lv.L}</div>`).join("");
+    const curLeft=Math.max(0,Math.min(100,posOf(px)));
+    const cur=`<div class="pcur" style="left:${curLeft.toFixed(2)}%"><span class="pcurlab">▲ ${fmtMoney(px)}</span></div>`;
+    const strip=`<div class="pstrip">${ticks}${cur}${labels}</div>`;
+    // (b) notable-levels list — moderate+ and every confluent level, ascending by price (overhead wall stack)
+    const rows=levels.filter(lv=>!lv.half&&(lv.effRank>=2||lv.confluent)).map(lv=>{
+      const badge=lv.conf.length?`<span class="pconf">${escapeHtml(lv.conf.join(" "))}</span>`:"";
+      const boost=(lv.confluent&&lv.effRank>lv.rank)?`<span class="pboost" title="confluence boosts effective strength one tier">↑</span>`:"";
+      return `<div class="prow${lv.confluent?" conf":""}"><span class="plvl">${fmtMoney(lv.L)}</span>`
+        +`<span class="sbar"><span style="width:${WFILL[lv.tier]}%"></span></span>`
+        +`<span class="pmid"><span class="ptier">${lv.tier}${boost}</span>${badge}</span>`
+        +`<span class="pdist">${fmtPct(lv.dist)}</span></div>`;
+    }).join("");
+    const list=`<div class="plist">${rows||'<div class="dim" style="padding:6px 4px">No moderate-or-stronger levels in this window.</div>'}</div>`;
+    const legend=`<div class="lad-badges"><span class="badge">window ${fmtMoney(lower)}–${fmtMoney(upper)}</span>`
+      +`<span class="badge">${levels.filter(l=>!l.half).length} levels</span>`
+      +(windowSize>80?'<span class="badge flat">wide range — strip shows all, list trims to moderate+</span>':'')+`</div>`;
+    const note=`<div class="psych-note">Round-number <b>heuristic</b>: whole/half dollars and multiples of 5/10/25/50/100 tend to attract order flow, so price often reacts near them; strength scales with how "round" the number is. A <b>+confluence</b> tag means the round number also lines up with a live technical level (an EMA or a scan rejection zone), which tends to make it a firmer level. This is <b>descriptive context, not a prediction</b> — it does not mean price must stop or reverse here. Distances are % from the current ${_num(a.price)==null?"price (last close — scan price was null)":"price"}.</div>`;
+    return note+legend+strip+list;
+  }
+  function psychHTML(a){
+    return `<div class="risk psych"><div class="rt">Psych Levels — round-number resistance</div><div class="psych-body">${psychInner(a,null)}</div></div>`;
   }
   // 200-week slope: sign + magnitude of (last - ~12 weeks ago)/prior over the ema200 series
   function computeSlope(ema200){
@@ -1034,6 +1214,8 @@
     const chg=(last-prev)/prev;
     return {dir:Math.abs(chg)<0.005?"flat":(chg>0?"rising":"falling"), chg};
   }
+  // session cache for Component-4 conviction data so re-renders don't refetch
+  const CONV_CACHE={fund:{},news:{}};
   function wireLadder(el,a){
     const box=el.querySelector(".ladder"); if(!box||!a)return;
     const tk=(a.ticker||"").toUpperCase();
@@ -1042,6 +1224,70 @@
       catalyst:!!(box.querySelector(".cv-cat")&&box.querySelector(".cv-cat").checked)}));}catch(e){}};
     const f=box.querySelector(".cv-fund"); if(f)f.addEventListener("change",save);
     const c=box.querySelector(".cv-cat"); if(c)c.addEventListener("change",save);
+    // --- Component 4 data panels: auto-fetch fundamentals + news (checkboxes stay manual) ---
+    const fundPanel=box.querySelector(".fund-panel"), newsPanel=box.querySelector(".news-panel");
+    if(!fundPanel||!newsPanel)return;
+    if(!hasBridge()){
+      fundPanel.innerHTML=`<div class="cv-err">Needs the app</div>`;
+      newsPanel.innerHTML=`<div class="cv-err">Needs the app</div>`;
+      return;
+    }
+    const fmtCap=(v)=>{if(v==null)return null;const n=Number(v);if(!isFinite(n))return null;
+      if(n>=1e12)return "$"+(n/1e12).toFixed(2)+"T";
+      if(n>=1e9)return "$"+(n/1e9).toFixed(1)+"B";
+      if(n>=1e6)return "$"+Math.round(n/1e6)+"M";
+      return "$"+Math.round(n).toLocaleString();};
+    const fmtDate=(u)=>{const d=new Date(Number(u)*1000);return isNaN(d.getTime())?"":d.toISOString().slice(0,10);};
+    const cell=(k,v)=>v==null?"":`<div class="cvk">${escapeHtml(k)}</div><div class="cvv">${escapeHtml(v)}</div>`;
+    // Fundamentals
+    (async()=>{
+      try{
+        let d=CONV_CACHE.fund[tk];
+        if(!d){ d=JSON.parse(await invoke("fundamentals",{ticker:tk})); CONV_CACHE.fund[tk]=d; }
+        if(d&&d.ok){
+          const one=(x)=>x==null?null:Number(x).toFixed(1);
+          const two=(x)=>x==null?null:"$"+Number(x).toFixed(2);
+          const wk=(d.fiftyTwoWeekLow!=null&&d.fiftyTwoWeekHigh!=null)
+            ? "$"+Number(d.fiftyTwoWeekLow).toFixed(2)+" – $"+Number(d.fiftyTwoWeekHigh).toFixed(2) : null;
+          const cells=[cell("P/E",one(d.trailingPE)),cell("Fwd P/E",one(d.forwardPE)),
+            cell("Mkt cap",fmtCap(d.marketCap)),cell("P/B",one(d.priceToBook)),
+            cell("EPS ttm",two(d.epsTtm)),cell("52-wk",wk)].filter(Boolean).join("");
+          const read=d.read?`<div class="cv-read">${escapeHtml(d.read)}</div>`:"";
+          fundPanel.innerHTML=(cells?`<div class="cv-grid">${cells}</div>`:"")+read
+            || `<div class="cv-err">No fundamentals returned — review manually.</div>`;
+        } else {
+          fundPanel.innerHTML=`<div class="cv-err">Fundamentals unavailable (${escapeHtml((d&&d.error)||"unknown")}) — review manually.</div>`;
+        }
+      }catch(e){
+        fundPanel.innerHTML=`<div class="cv-err">Fundamentals unavailable (${escapeHtml(String(e&&e.message||e))}) — review manually.</div>`;
+      }
+    })();
+    // News
+    (async()=>{
+      try{
+        let d=CONV_CACHE.news[tk];
+        if(!d){ d=JSON.parse(await invoke("news",{ticker:tk})); CONV_CACHE.news[tk]=d; }
+        if(d&&d.ok){
+          const items=Array.isArray(d.items)?d.items.slice(0,6):[];
+          if(!items.length){ newsPanel.innerHTML=`<div class="cv-err">No recent news found.</div>`; return; }
+          const head=(d.sector||d.industry)
+            ? `<div class="cv-newshead">${escapeHtml([d.sector,d.industry].filter(Boolean).join(" · "))}</div>` : "";
+          newsPanel.innerHTML=head+items.map(it=>{
+            const dt=it.unixTime!=null?fmtDate(it.unixTime):"";
+            const src=it.publisher?`<span class="cvsrc">${escapeHtml(it.publisher)}</span> · `:"";
+            const pre=dt?`<span class="cvd">${escapeHtml(dt)}</span> · `:"";
+            return `<div class="cv-news">${pre}${src}<a class="cv-link">${escapeHtml(it.title||"(untitled)")}</a></div>`;
+          }).join("");
+          const links=newsPanel.querySelectorAll(".cv-link");
+          items.forEach((it,i)=>{ const el2=links[i]; if(!el2)return;
+            el2.addEventListener("click",async()=>{ try{ await invoke("open_url",{url:it.link}); }catch(e){ status("Could not open browser: "+escapeHtml(String(e))); } }); });
+        } else {
+          newsPanel.innerHTML=`<div class="cv-err">News unavailable (${escapeHtml((d&&d.error)||"unknown")}) — check manually.</div>`;
+        }
+      }catch(e){
+        newsPanel.innerHTML=`<div class="cv-err">News unavailable (${escapeHtml(String(e&&e.message||e))}) — check manually.</div>`;
+      }
+    })();
   }
   // ---- interactive price chart (self-contained canvas: crosshair, zoom, pan, draw tools) ----
   function cssv(name){return getComputedStyle(document.body).getPropertyValue(name).trim()||"#888";}
@@ -1170,6 +1416,9 @@
       // enrich the ladder with the chart's real last close + computed 200-week slope
       const ladBody=el.querySelector(".ladder .lad-body");
       if(ladBody&&t.data){ ladBody.innerHTML=ladderInner(t.data,_lastFinite(d.close),computeSlope(d.ema200)); wireLadder(el,t.data); }
+      // re-render psych levels with the chart's real last close (covers null scan price)
+      const psyBody=el.querySelector(".psych .psych-body");
+      if(psyBody&&t.data){ psyBody.innerHTML=psychInner(t.data,_lastFinite(d.close)); }
     }catch(e){ wrap.innerHTML=`<div class="chtools dim">chart unavailable: ${escapeHtml(String(e))}</div>`; }
   }
 
@@ -1310,13 +1559,13 @@ you were testing before you see the numbers.</pre></div>`;
     if(!logSel||!entries.some(e=>e.id===logSel))logSel=entries[0]?entries[0].id:null;
     const listBox=document.createElement("div");listBox.className="list";
     listBox.innerHTML=entries.length?entries.map(e=>`<div class="logentry ${e.id===logSel?"sel":""}" data-id="${e.id}" style="cursor:pointer;${e.id===logSel?"background:var(--sel);box-shadow:inset 2px 0 0 var(--accent);":""}">
-        <div class="lt">${e.ts} · ${e.kind}${e.verdict?` · <span class="${(e.verdict||"").toLowerCase().includes("buy")?"up":(e.verdict||"").toLowerCase().includes("avoid")?"down":"warn"}">${escapeHtml(e.verdict)}</span>`:""}</div>
+        <div class="lt">${e.ts}${e.verdict?` · <span class="${verdictClass(e.verdict)}">${escapeHtml(e.verdict)}</span>`:(e.title?` · ${escapeHtml(e.title)}`:"")}</div>
         <div class="ln ${e.notes?"":"empty"}">${e.notes?escapeHtml(e.notes):"no notes on this run"}</div></div>`).join("")
       :`<pre class="dim" style="padding:12px">Nothing logged for this ticker yet.</pre>`;
     const viewer=document.createElement("div");viewer.className="viewer";
     const sel=entries.find(e=>e.id===logSel);
     viewer.innerHTML=sel
-      ? `<div class="ts" style="margin-bottom:8px">${sel.ts} · ${sel.kind}</div><pre>${escapeHtml(sel.plain||"")}</pre>
+      ? `<div class="ts" style="margin-bottom:8px">${sel.ts}${sel.kind&&sel.kind!=="scan"?" · "+sel.kind:""}</div><pre>${escapeHtml(sel.plain||"")}</pre>
          <div class="notes"><div class="nh">${ic("note")}<span class="k">Notes for this run</span><span class="saved" id="logNoteSaved">saved</span></div>
          <textarea id="logNote" placeholder="What did you conclude from THIS run?">${escapeHtml(sel.notes||"")}</textarea></div>`
       : `<pre class="dim">Select a run on the left to read it and write notes against it.</pre>`;
@@ -1364,7 +1613,7 @@ you were testing before you see the numbers.</pre></div>`;
     const rows=[...history].sort((a,b)=>{let av=a[sortKey],bv=b[sortKey];if(sortKey==="tsRaw"){av=a.tsRaw;bv=b.tsRaw;}if(av<bv)return -sortDir;if(av>bv)return sortDir;return 0;});
     const arrow=(k)=>sortKey===k?(sortDir>0?" ▲":" ▼"):"";
     const listBox=document.createElement("div");listBox.className="list";
-    listBox.innerHTML=`<table><thead><tr><th data-k="tsRaw">Date${arrow("tsRaw")}</th><th data-k="ticker">Ticker${arrow("ticker")}</th><th data-k="kind">Type${arrow("kind")}</th><th data-k="title">Title${arrow("title")}</th></tr></thead><tbody>${rows.map(r=>`<tr data-id="${r.id}" class="${selRow===r.id?"sel":""}"><td class="dim">${r.ts}</td><td class="val">${r.ticker||""}</td><td>${r.kind}</td><td>${escapeHtml(r.title||"")}</td></tr>`).join("")||`<tr><td colspan=4 class="dim">No saved runs yet. Scans/backtests auto-save; Scenario has Save snapshot.</td></tr>`}</tbody></table>`;
+    listBox.innerHTML=`<table><thead><tr><th data-k="tsRaw">Date${arrow("tsRaw")}</th><th data-k="ticker">Ticker${arrow("ticker")}</th><th data-k="kind">Type${arrow("kind")}</th><th data-k="title">Title${arrow("title")}</th></tr></thead><tbody>${rows.map(r=>`<tr data-id="${r.id}" class="${selRow===r.id?"sel":""}"><td class="dim">${r.ts}</td><td class="val">${r.ticker||""}</td><td>${r.kind==="scan"?"":r.kind}</td><td>${escapeHtml(r.title||"")}</td></tr>`).join("")||`<tr><td colspan=4 class="dim">No saved runs yet. Scans/backtests auto-save; Scenario has Save snapshot.</td></tr>`}</tbody></table>`;
     const viewer=document.createElement("div");viewer.className="viewer";const sel=history.find(r=>r.id===selRow);viewer.innerHTML=sel?`<pre>${escapeHtml(sel.plain)}</pre>`:`<pre class="dim">Select a row to view it here.</pre>`;
     wrap.appendChild(listBox);wrap.appendChild(viewer);container.appendChild(ctrl);container.appendChild(wrap);
     setTimeout(()=>{listBox.querySelectorAll("th").forEach(h=>h.onclick=()=>{const k=h.dataset.k;if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=(k==="tsRaw")?-1:1;}renderView();});
@@ -1377,13 +1626,13 @@ you were testing before you see the numbers.</pre></div>`;
   // scanInto(t, sym) — runs a scan and writes it into tab t (used by both Scan and Rescan)
   async function scanInto(t,sym){
     const json=await invoke("scan",{ticker:sym,timeframe:$("tf").value});
-    t.data=JSON.parse(json);t.plain=plainScan(t.data);t.title=`${sym} scan`;t.kind="scan";t.ticker=sym;t.ts=now();
+    t.data=JSON.parse(json);t.plain=plainScan(t.data);t.title=sym;t.kind="scan";t.ticker=sym;t.ts=now();
     addHistory({ticker:sym,kind:"scan",title:t.title,plain:t.plain});
     const e=logRun(sym,{kind:"scan",title:t.title,plain:t.plain,verdict:t.data.verdict,price:t.data.price,timeframe:$("tf").value});
     t.logId=e.id;   // notes typed in this tab attach to this run
     renderTabs();renderView();persist();
   }
-  async function doScan(){if(!hasBridge()){status("Tauri bridge not available (open via the app).");return;}let t=cur();if(mode!=="tabs"||!t||t.kind!=="scan"||t.data){t=newTab("scan");}const sym=$("ticker").value.trim().toUpperCase();if(!sym)return;status(`Scanning <b>${sym}</b>…`);
+  async function doScan(){if(!hasBridge()){status("Tauri bridge not available (open via the app).");return;}let t=cur();if(mode!=="tabs"||!t||t.data||t.kind==="scenario"){t=newTab();}const sym=$("ticker").value.trim().toUpperCase();if(!sym)return;status(`Scanning <b>${sym}</b>…`);
     try{await scanInto(t,sym);status("Done.");}catch(e){status("Error.");$("view").innerHTML=`<pre class="down">${escapeHtml(String(e))}</pre>`;}}
   // Rescan a specific tab from its in-tab chip: make it active, then re-run in place.
   async function rescanTab(t){active=t.id;setMode("tabs");renderTabs();renderView();await doRescan();}
@@ -1404,7 +1653,7 @@ you were testing before you see the numbers.</pre></div>`;
       status(`Rescanned <b>${sym}</b> — logged as a new run.`);
     }catch(e){status("Error.");$("view").innerHTML=`<pre class="down">${escapeHtml(String(e))}</pre>`;}
   }
-  async function doBacktest(){if(!hasBridge()){status("Tauri bridge not available.");return;}let t=cur();if(mode!=="tabs"||!t||t.data){t=newTab("scan");}const sym=$("ticker").value.trim().toUpperCase();if(!sym)return;status(`Backtesting <b>${sym}</b>…`);
+  async function doBacktest(){if(!hasBridge()){status("Tauri bridge not available.");return;}let t=cur();if(mode!=="tabs"||!t||t.data){t=newTab();}const sym=$("ticker").value.trim().toUpperCase();if(!sym)return;status(`Backtesting <b>${sym}</b>…`);
     try{await backtestInto(t,sym);status("Done.");}catch(e){status("Error.");$("view").innerHTML=`<pre class="down">${escapeHtml(String(e))}</pre>`;}}
   async function backtestInto(t,sym){
     const r=JSON.parse(await invoke("backtest",{ticker:sym,timeframe:$("tf").value}))[0];
@@ -1415,14 +1664,308 @@ you were testing before you see the numbers.</pre></div>`;
     t.logId=e.id;
     renderTabs();renderView();persist();
   }
+  // ---- FINDR: bulk letter-range screener ------------------------------------
+  const findrUnlisten={};   // tabId -> array of unlisten promises (kept off the tab so it never persists)
+  const findrBus=()=>(window.__TAURI__&&window.__TAURI__.event)||null;
+  function findrLetterOpts(sel){let s="";for(let i=65;i<=90;i++){const c=String.fromCharCode(i);s+=`<option${c===sel?" selected":""}>${c}</option>`;}return s;}
+  // Columns: text sort case-insensitive; numeric sort with null/NaN ALWAYS last (both directions).
+  const FINDR_NUMERIC={r_multiple:1,upside_pct:1,price:1};
+  const FINDR_COLS=[["symbol","Symbol"],["name","Name"],["verdict","Verdict"],["r_multiple","R"],["upside_pct","Profit %"],["price","Price"]];
+  const findrSortDefault=()=>({key:"upside_pct",dir:"desc"});   // DEFAULT: highest profit at top
+  function findrComparator(sort){
+    const key=(sort&&sort.key)||"upside_pct", dir=(sort&&sort.dir)||"desc", mul=dir==="asc"?1:-1;
+    if(FINDR_NUMERIC[key]){
+      return (a,b)=>{
+        let x=a[key],y=b[key];
+        x=(x==null||isNaN(Number(x)))?null:Number(x);
+        y=(y==null||isNaN(Number(y)))?null:Number(y);
+        if(x==null&&y==null)return 0;
+        if(x==null)return 1;   // null/NaN always last, regardless of dir
+        if(y==null)return -1;
+        return (x-y)*mul;
+      };
+    }
+    return (a,b)=>{
+      const x=String(a[key]==null?"":a[key]).toLowerCase(), y=String(b[key]==null?"":b[key]).toLowerCase();
+      return x<y?-1*mul:x>y?1*mul:0;
+    };
+  }
+  function findrRowHTML(h){
+    const r=(h.r_multiple==null)?"—":Number(h.r_multiple).toFixed(2);
+    const up=(h.upside_pct==null)?"—":fmtPct(h.upside_pct);
+    const px=(h.price==null)?"—":fmtMoney(h.price);
+    return `<tr class="findr-row" data-sym="${escapeHtml(h.symbol)}">`
+      +`<td class="val">${escapeHtml(h.symbol)}</td>`
+      +`<td>${escapeHtml(h.name||"")}</td>`
+      +`<td class="${verdictClass(h.verdict)}">${escapeHtml(h.verdict||"")}</td>`
+      +`<td class="num">${r}</td><td class="num">${up}</td><td class="num">${px}</td></tr>`;
+  }
+  function findrHeadHTML(t){
+    const sort=t.sort||findrSortDefault();
+    return "<tr>"+FINDR_COLS.map(([k,lab])=>{
+      const num=!!FINDR_NUMERIC[k], active=sort.key===k;
+      const arrow=active?(sort.dir==="asc"?" ▲":" ▼"):"";
+      return `<th class="findr-th${num?" num":""}${active?" active":""}" data-key="${k}">${escapeHtml(lab)}${arrow}</th>`;
+    }).join("")+"</tr>";
+  }
+  function findrPlain(t){
+    // Export always reflects profit-% descending (operator's ranking), independent of live UI sort.
+    const h=((t.data&&t.data.hits)||[]).slice().sort(findrComparator({key:"upside_pct",dir:"desc"}));
+    const head=`SWINGR — FINDR ${(t.findrStart||"A")}-${(t.findrEnd||"Z")} [${t.findrTf||"weekly"}]  found ${h.length}  (ranked by profit %)`;
+    return [head,""].concat(h.map(x=>`${x.symbol}  Profit ${x.upside_pct==null?"—":Number(x.upside_pct).toFixed(1)+"%"}  R ${x.r_multiple==null?"—":Number(x.r_multiple).toFixed(2)}  ${x.verdict||""}`)).join("\n");
+  }
+  function findrHTML(t){
+    t.sort=t.sort||findrSortDefault();
+    const d=t.data||{};
+    const hits=((d.hits)||[]).slice().sort(findrComparator(t.sort));
+    const start=t.findrStart||"A",end=t.findrEnd||"Z",tf=t.findrTf||"weekly";
+    const noBridge=!hasBridge()||!findrBus();
+    return `<div class="findr">
+      <div class="findr-intro dim">FINDR — bulk swing screener. Scans every US common-stock ticker in your letter range for locked-in BUY setups (below 200-week EMA + 9/20 reclaimed), ranked by profit % (gain to the 200-EMA take-profit).</div>
+      <div class="findr-ctl">
+        <label>Start</label><select class="findr-start">${findrLetterOpts(start)}</select>
+        <label>End</label><select class="findr-end">${findrLetterOpts(end)}</select>
+        <select class="findr-tf"><option value="weekly"${tf==="weekly"?" selected":""}>Weekly</option><option value="daily"${tf==="daily"?" selected":""}>Daily</option></select>
+        <button class="findr-run primary"${noBridge?" disabled":""}>Run FINDR</button>
+        <button class="findr-cancel" disabled>Cancel</button>
+        ${noBridge?`<span class="findr-nobridge dim">Needs the app</span>`:""}
+      </div>
+      <div class="findr-note dim">A-Z is ~13,000 tickers and can take 30-60 min (Yahoo rate-limits on big runs). One letter is a few minutes.</div>
+      <div class="findr-prog" style="display:none"><div class="findr-bar"><div class="findr-fill" style="width:0%"></div></div><div class="findr-progtxt dim"></div></div>
+      <div class="findr-log" aria-label="Live scan activity"></div>
+      <div class="dtwrap findr-tablewrap"><table class="findr-table"><thead class="findr-head">${findrHeadHTML(t)}</thead><tbody class="findr-results">${hits.map(findrRowHTML).join("")}</tbody></table></div>
+      <div class="findr-found dim">Found ${hits.length}</div>
+    </div>`;
+  }
+  function wireFindr(el,t){
+    t.sort=t.sort||findrSortDefault();
+    const runBtn=el.querySelector(".findr-run"),cancelBtn=el.querySelector(".findr-cancel");
+    const startSel=el.querySelector(".findr-start"),endSel=el.querySelector(".findr-end"),tfSel=el.querySelector(".findr-tf");
+    const prog=el.querySelector(".findr-prog"),fill=el.querySelector(".findr-fill"),progtxt=el.querySelector(".findr-progtxt");
+    const tbody=el.querySelector(".findr-results"),foundEl=el.querySelector(".findr-found"),thead=el.querySelector(".findr-head");
+    if(!runBtn)return;
+    const remember=()=>{t.findrStart=startSel.value;t.findrEnd=endSel.value;t.findrTf=tfSel.value;};
+    startSel.onchange=remember;endSel.onchange=remember;tfSel.onchange=remember;
+
+    // Click-to-sort: same header toggles asc/desc; new header defaults numeric->desc, text->asc.
+    if(thead)thead.onclick=(e)=>{
+      const th=e.target.closest("th[data-key]");if(!th)return;
+      const k=th.dataset.key, cur=t.sort||findrSortDefault();
+      t.sort=(cur.key===k)?{key:k,dir:cur.dir==="asc"?"desc":"asc"}:{key:k,dir:FINDR_NUMERIC[k]?"desc":"asc"};
+      renderRows();if(typeof persist==="function")persist();
+    };
+
+    // open a hit as a full scan tab — mirrors doScan (newTab -> scanInto)
+    async function openHit(sym){
+      if(!sym)return;
+      if(!hasBridge()){status("Scanning needs the app.");return;}
+      const tf=t.findrTf||tfSel.value||"weekly";
+      const nt=newTab();nt.ticker=sym;$("ticker").value=sym;$("tf").value=tf;
+      status(`Scanning <b>${escapeHtml(sym)}</b>…`);
+      try{await scanInto(nt,sym);status("Done.");}
+      catch(err){status("Error.");$("view").innerHTML=`<pre class="down">${escapeHtml(String(err))}</pre>`;}
+    }
+    tbody.onclick=(e)=>{const tr=e.target.closest("tr[data-sym]");if(tr)openHit(tr.dataset.sym);};
+
+    // One-pass render: sort in-memory hits, build the full rows string, assign innerHTML ONCE.
+    function renderRows(){
+      const arr=(t.data&&t.data.hits)||[];
+      arr.sort(findrComparator(t.sort));
+      tbody.innerHTML=arr.map(findrRowHTML).join("");
+      foundEl.textContent="Found "+arr.length;
+      if(thead)thead.innerHTML=findrHeadHTML(t);   // refresh active-column arrow
+    }
+    // Coalesce rapid streaming hits into one render per frame; table always ends correct+sorted.
+    const raf=window.requestAnimationFrame?window.requestAnimationFrame.bind(window):(cb)=>setTimeout(cb,16);
+    let renderPending=false;
+    function scheduleRender(){if(renderPending)return;renderPending=true;raf(()=>{renderPending=false;renderRows();});}
+
+    // Live activity log (ephemeral, DOM-only — not persisted, not in t.data.hits).
+    const logBox=el.querySelector(".findr-log");
+    const LOG_CAP=500;
+    let logPending=[],logRafPending=false;
+    function logLineHTML(p){
+      const v=String(p.verdict||"");
+      const c=/^BUY/i.test(v)?"findr-log-buy":/^SKIP/i.test(v)?"findr-log-skip":"findr-log-def";
+      const r=(p.r_multiple==null)?"—":Number(p.r_multiple).toFixed(2);
+      const up=(p.upside_pct==null)?"—":fmtPct(p.upside_pct);
+      return `<div class="findr-logline ${c}">${escapeHtml(p.symbol||"")}  ·  ${escapeHtml(v)}  ·  R ${r}  ·  ${up}</div>`;
+    }
+    function flushLog(){
+      logRafPending=false;
+      if(!logBox||!logPending.length)return;
+      // auto-scroll only if the user is already near the bottom (don't yank if they scrolled up)
+      const nearBottom=(logBox.scrollHeight-logBox.scrollTop-logBox.clientHeight)<40;
+      logBox.insertAdjacentHTML("beforeend",logPending.join(""));logPending.length=0;
+      let over=logBox.childElementCount-LOG_CAP;   // drop oldest from the top past the cap
+      while(over-->0&&logBox.firstElementChild)logBox.removeChild(logBox.firstElementChild);
+      if(nearBottom)logBox.scrollTop=logBox.scrollHeight;
+    }
+    function scheduleLog(){if(logRafPending)return;logRafPending=true;raf(flushLog);}
+
+    // Progress driven by EVERY finished ticker (findr:log), coalesced to one DOM write per frame.
+    let progRafPending=false,progCurrent="";
+    function flushProg(){
+      progRafPending=false;
+      if(!t.data)return;
+      const seen=t.data.seen||0, total=t.data.total||0, found=(t.data.hits||[]).length;
+      const pct=total?Math.min(100,seen/total*100):0;
+      fill.style.width=pct.toFixed(1)+"%";
+      progtxt.textContent=total?`Scanned ${seen} / ${total} · Found ${found} · ${progCurrent}`:`Scanned ${seen} / … · Found ${found} · ${progCurrent}`;
+    }
+    function scheduleProg(){if(progRafPending)return;progRafPending=true;raf(flushProg);}
+
+    // Run/Stop toggle button — single element reflects t.running.
+    function syncRunBtn(){
+      if(t.running){runBtn.textContent="STOP";runBtn.classList.remove("primary");runBtn.classList.add("findr-stop");}
+      else{runBtn.textContent="RUN FINDR";runBtn.classList.remove("findr-stop");runBtn.classList.add("primary");}
+    }
+
+    async function detach(){
+      const arr=findrUnlisten[t.id];if(!arr)return;delete findrUnlisten[t.id];
+      for(const u of arr){try{const f=await u;if(typeof f==="function")f();}catch(_){}}
+    }
+
+    if(cancelBtn)cancelBtn.style.display="none";   // merged into the Run/Stop toggle
+
+    const bus=findrBus();
+    if(!hasBridge()||!bus){runBtn.disabled=true;return;}
+
+    // resuming a re-render mid-run: reflect running state (live rows update on next render)
+    if(t.data&&t.data.done===false&&t.runId){
+      prog.style.display="";
+      const seen=t.data.seen||t.data.scanned||0, pct=t.data.total?Math.min(100,seen/t.data.total*100):0;
+      fill.style.width=pct.toFixed(1)+"%";
+      progtxt.textContent=`Scanned ${seen} / ${t.data.total||"…"} · Found ${(t.data.hits||[]).length}`;
+    }else if(t.running){t.running=false;}   // clear a stale spinner (e.g. after app restart)
+    syncRunBtn();
+
+    async function startRun(){
+      await detach();
+      let s=startSel.value,e2=endSel.value;
+      if(s>e2){const tmp=s;s=e2;e2=tmp;startSel.value=s;endSel.value=e2;}
+      const tf=tfSel.value;remember();
+      const run_id="findr"+Date.now()+"_"+Math.floor(Math.random()*1e6);
+      t.runId=run_id;
+      t.data={hits:[],scanned:0,total:0,seen:0,done:false};
+      progCurrent="";
+      tbody.innerHTML="";foundEl.textContent="Found 0";
+      if(logBox)logBox.innerHTML="";logPending.length=0;   // clear log on each new run
+      prog.style.display="";fill.style.width="0%";progtxt.textContent="Starting…";
+      t.running=true;syncRunBtn();renderTabs();   // toggle to STOP + start the tab-bar spinner
+      // total comes ONLY from progress; also used for final reconciliation
+      const onProg=(e)=>{const p=e.payload;if(!p||p.run_id!==t.runId)return;t.data.scanned=p.scanned;t.data.total=p.total;scheduleProg();};
+      const onHit=(e)=>{const p=e.payload;if(!p||p.run_id!==t.runId)return;t.data.hits.push({symbol:p.symbol,name:p.name,verdict:p.verdict,r_multiple:p.r_multiple,upside_pct:p.upside_pct,price:p.price,setup_quality:p.setup_quality});scheduleRender();};
+      // EVERY finished ticker: bump the live counter + refresh the log
+      const onLog=(e)=>{const p=e.payload;if(!p||p.run_id!==t.runId)return;t.data.seen=(t.data.seen||0)+1;progCurrent=p.symbol||"";logPending.push(logLineHTML(p));scheduleLog();scheduleProg();};
+      const finish=(scanned,total,cancelled,foundN)=>{t.data.done=true;t.running=false;progCurrent="";const seen=Math.max(t.data.seen||0,scanned||0);progtxt.textContent=cancelled?`Stopped — scanned ${seen}, found ${foundN}`:`Done — scanned ${seen}/${total}, found ${foundN}`;t.plain=findrPlain(t);renderRows();syncRunBtn();renderTabs();if(typeof persist==="function")persist();};
+      const onDone=async(e)=>{const p=e.payload;if(!p||p.run_id!==t.runId)return;await detach();finish(p.scanned,p.total,p.cancelled,p.found_count);};
+      findrUnlisten[t.id]=[bus.listen("findr:progress",onProg),bus.listen("findr:hit",onHit),bus.listen("findr:log",onLog),bus.listen("findr:done",onDone)];
+      status(`FINDR scanning ${s}${s===e2?"":"–"+e2}…`);
+      try{
+        const res=await invoke("findr",{start:s,end:e2,timeframe:tf,runId:run_id});
+        if(!t.data.done){   // done event missed — reconcile from the awaited final list
+          let fin=null;try{fin=JSON.parse(res);}catch(_){}
+          if(fin&&fin.run_id===t.runId){
+            if(Array.isArray(fin.found))t.data.hits=fin.found.map(h=>({symbol:h.symbol,name:h.name,verdict:h.verdict,r_multiple:h.r_multiple,upside_pct:h.upside_pct,price:h.price,setup_quality:h.setup_quality}));
+            await detach();finish(fin.scanned,fin.total,fin.cancelled,(fin.found||[]).length);
+          }
+        }
+      }catch(err){await detach();t.running=false;progCurrent="";syncRunBtn();renderTabs();progtxt.textContent="Error: "+String(err&&err.message||err);}
+    }
+    async function stopRun(){status("Stopping FINDR…");try{await invoke("findr_cancel",{runId:t.runId});}catch(_){}}
+    runBtn.onclick=()=>{ if(t.running) stopRun(); else startRun(); };
+  }
+
   function doScenario(){mode="tabs";Object.values(MODE_BTN).forEach(id=>{const b=$(id);if(b)b.classList.remove("primary");});newTab("scenario");status("New scenario — give it a ticker or an objective, then start.");}
   function doSaved(){setMode("saved");}
   function doLog(){setMode("log");}
   async function doExport(){const t=cur();if(mode!=="tabs"){status("Switch to a result tab to export it.");return;}if(!t||!t.plain){status("Nothing to export in this tab.");return;}if(!hasBridge()){status("Export needs the app.");return;}const base=(t.title||"stockscanner").replace(/[^a-z0-9]+/gi,"_").toLowerCase();const stamp=new Date().toISOString().slice(0,19).replace(/[:T]/g,"-");try{const path=await invoke("save_text",{filename:`${base}_${stamp}`,contents:t.plain,location:exportLoc});status(`Saved: <b>${path}</b>`);}catch(e){status("Export failed: "+e);}}
+  // ---- portable data set: Export All + Import ------------------------------
+  // Serialize EVERYTHING under ss_* / def_* plus the in-memory tabs into one JSON envelope.
+  function collectExport(){
+    persist();                                   // flush current in-memory state to localStorage first
+    const data={};
+    for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);
+      if(k&&(k.startsWith("ss_")||k.startsWith("def_")))data[k]=localStorage.getItem(k);}
+    data.tabs=tabs;                              // parsed tab objects, for portability/inspection
+    return {app:"swingr",schema:1,exportedAt:new Date().toISOString(),data};
+  }
+  async function doExportAll(){
+    const payload=JSON.stringify(collectExport(),null,2);
+    const fname="swingr-export-"+new Date().toISOString().slice(0,10)+".json";
+    if(hasBridge()){
+      // reuse the same save_text + folder plumbing as the per-tab text export
+      try{const path=await invoke("save_text",{filename:fname,contents:payload,location:exportLoc});
+        status("Exported data set: <b>"+escapeHtml(path)+"</b>");}
+      catch(e){status("Export All failed: "+escapeHtml(String(e)));}
+    }else{
+      // browser fallback (no Tauri bridge): download blob
+      try{const blob=new Blob([payload],{type:"application/json"});const url=URL.createObjectURL(blob);
+        const a=$("dlAnchor");a.href=url;a.download=fname;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+        status("Exported data set: <b>"+escapeHtml(fname)+"</b>");}
+      catch(e){status("Export All failed: "+escapeHtml(String(e)));}
+    }
+  }
+  function triggerImport(){$("importFile").click();}
+  function applyImport(mode,doc,name){
+    const src=doc.data||{};
+    try{
+      const impTabs=Array.isArray(src.tabs)?src.tabs:(src.ss_tabs?JSON.parse(src.ss_tabs):[]);
+      if(mode==="replace"){
+        // wipe existing ss_/def_ keys, then write the imported ones verbatim
+        const rm=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&(k.startsWith("ss_")||k.startsWith("def_")))rm.push(k);}
+        rm.forEach(k=>localStorage.removeItem(k));
+        Object.keys(src).forEach(k=>{if(k==="tabs")return;if(k.startsWith("ss_")||k.startsWith("def_"))
+          localStorage.setItem(k,typeof src[k]==="string"?src[k]:JSON.stringify(src[k]));});
+        if(!localStorage.getItem("ss_tabs")&&impTabs.length)localStorage.setItem("ss_tabs",JSON.stringify(impTabs));
+      }else{
+        // merge: keep current config/theme/prefs; append imported tabs + logs + history
+        const haveIds=new Set(tabs.map(t=>t.id));
+        impTabs.forEach(t=>{const nt={...t};
+          if(haveIds.has(nt.id))nt.id="t"+(++seq);
+          else{const n=+String(nt.id).slice(1);if(isFinite(n)&&n>seq)seq=n;}
+          haveIds.add(nt.id);tabs.push(nt);});
+        const impLogs=src.ss_tickerLogs?JSON.parse(src.ss_tickerLogs):{};
+        Object.keys(impLogs).forEach(k=>{if(!tickerLogs[k])tickerLogs[k]=[];
+          const seen=new Set(tickerLogs[k].map(e=>e.id));
+          impLogs[k].forEach(e=>{if(!e.id||!seen.has(e.id)){tickerLogs[k].push(e);if(e.id)seen.add(e.id);}});});
+        const impHist=src.ss_history?JSON.parse(src.ss_history):[];
+        const seenH=new Set(history.map(h=>h.id));
+        impHist.forEach(h=>{if(!h.id||!seenH.has(h.id)){history.push(h);if(h.id)seenH.add(h.id);}});
+        persist();                                // flush merged state so restore() re-reads it
+      }
+      restore();                                  // rebuild tabs/history/logs/theme from localStorage
+      loadPrefs();                                // re-apply font/size/weight/cols
+      const th=localStorage.getItem("ss_theme");if(th){$("theme").value=th;document.body.setAttribute("data-theme",th);}
+      exportLoc=localStorage.getItem("ss_exportLoc")||exportLoc;markMenu();
+      applyNav();renderTabs();renderView();
+      status("Imported "+impTabs.length+" tabs from <b>"+escapeHtml(name)+"</b> ("+mode+").");
+    }catch(err){status("Import failed: "+escapeHtml(String(err))+" — current data untouched.");}
+  }
+  $("importFile").onchange=(e)=>{
+    const f=e.target.files&&e.target.files[0];e.target.value="";   // reset so the same file can be re-picked
+    if(!f)return;
+    const rd=new FileReader();
+    rd.onerror=()=>status("Import failed: could not read file.");
+    rd.onload=()=>{
+      let doc;
+      try{doc=JSON.parse(rd.result);}catch(err){status("Import rejected: not valid JSON.");return;}
+      if(!doc||doc.app!=="swingr"){status("Import rejected: not a Swing R export file.");return;}
+      if(doc.schema!==1){status("Import rejected: unsupported schema ("+escapeHtml(String(doc.schema))+"). Expected 1.");return;}
+      if(!doc.data||typeof doc.data!=="object"){status("Import rejected: file has no data.");return;}
+      const nTabs=Array.isArray(doc.data.tabs)?doc.data.tabs.length:(doc.data.ss_tabs?(JSON.parse(doc.data.ss_tabs)||[]).length:0);
+      if(!confirm("Import "+nTabs+" tabs from “"+f.name+"”?"))return;                 // cancel = abort entirely
+      const rep=confirm("OK = REPLACE all current data with the import.\nCancel = MERGE the import into your current data (keeps your theme & prefs).");
+      applyImport(rep?"replace":"merge",doc,f.name);
+    };
+    rd.readAsText(f);
+  };
+
   function toggleHelp(){helpOn=!helpOn;$("helpBtn").classList.toggle("primary",helpOn);document.body.classList.toggle("help-on",helpOn);renderView();persist();}
 
   $("scanBtn").onclick=doScan;$("btBtn").onclick=doBacktest;$("scenBtn").onclick=doScenario;$("logBtn").onclick=doLog;$("savedBtn").onclick=doSaved;$("exportBtn").onclick=doExport;$("helpBtn").onclick=toggleHelp;$("navBtn").onclick=toggleNav;
-  $("sbadd").onclick=()=>newTab("scan");
+  $("sbadd").onclick=()=>newTab();
   $("sbq").addEventListener("input",e=>{sbQuery=e.target.value;renderSidebar();});
   // (single collapse button = navBtn in the tabsrow, always top-left; sbNav removed)
   $("ticker").addEventListener("keydown",e=>{if(e.key==="Enter")doScan();});
@@ -1534,6 +2077,11 @@ you were testing before you see the numbers.</pre></div>`;
   $("exportCaret").onclick=(e)=>{e.stopPropagation();const m=$("exportMenu"),r=$("exportCaret").getBoundingClientRect();m.style.left=Math.min(r.left,innerWidth-170)+"px";m.style.top=r.bottom+4+"px";markMenu();m.classList.toggle("show");};
   document.querySelectorAll("#exportMenu .mi").forEach(mi=>mi.onclick=async()=>{
     $("exportMenu").classList.remove("show");
+    if(mi.dataset.act){                                   // Export All / Import — not a location
+      if(mi.dataset.act==="exportall")doExportAll();
+      else if(mi.dataset.act==="import")triggerImport();
+      return;
+    }
     if(mi.dataset.loc==="__choose__"){
       if(!hasBridge()){status("Folder picker needs the app.");return;}
       try{const p=await invoke("choose_folder");if(p){exportLoc=p;localStorage.setItem("ss_exportLoc",p);markMenu();status("Export folder: <b>"+escapeHtml(p)+"</b>");}}catch(e){status("Picker failed: "+e);}
@@ -1542,7 +2090,7 @@ you were testing before you see the numbers.</pre></div>`;
   document.addEventListener("mousedown",(e)=>{if(!$("exportMenu").contains(e.target)&&e.target.id!=="exportCaret"&&!e.target.closest("#exportCaret"))$("exportMenu").classList.remove("show");});
   markMenu();
 
-  if(restore()){applyNav();renderTabs();if(helpOn){$("helpBtn").classList.add("primary");document.body.classList.add("help-on");}renderView();}else{applyNav();newTab("scan");}
+  if(restore()){applyNav();renderTabs();if(helpOn){$("helpBtn").classList.add("primary");document.body.classList.add("help-on");}renderView();}else{applyNav();newTab();}
 </script>
 </body>
 </html>
