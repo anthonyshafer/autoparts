@@ -371,6 +371,43 @@
   .risk .out .c{border:1px solid var(--grid);padding:8px 11px;min-width:120px;}
   .risk .out .c .k{font-size:0.692em;text-transform:uppercase;letter-spacing:1px;color:var(--dim);}
   .risk .out .c .v{font-size:1.308em;font-weight:700;color:var(--hi);margin-top:3px;}
+  /* Component 1: verdict-backing sub-line (data-cited, descriptive) */
+  .vbacking{margin:-8px 0 16px;padding:8px 11px;border:1px solid var(--grid);border-left:2px solid var(--accent2);background:var(--panel2);color:var(--fg);font-size:0.9em;line-height:1.5;}
+  .vbacking b{color:var(--hi);font-weight:700;}
+  /* Setup Ladder "THE GAUNTLET" — reuses .risk panel chrome so all 16 skins style it */
+  .ladder .lad-badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+  .ladder .badge{font-size:0.7em;text-transform:uppercase;letter-spacing:1px;padding:3px 8px;border:1px solid var(--grid);color:var(--dim);background:var(--panel2);}
+  .ladder .badge b{color:var(--hi);}
+  .ladder .badge.up{border-color:var(--up);color:var(--up);}
+  .ladder .badge.down{border-color:var(--down);color:var(--down);}
+  .ladder .badge.flat{border-color:var(--warn);color:var(--warn);}
+  .ladder .rungs{display:flex;flex-direction:column;}
+  .ladder .rung{display:grid;grid-template-columns:14px 1fr auto;gap:10px;align-items:center;padding:7px 4px;border-top:1px dashed var(--grid);}
+  .ladder .rung:first-child{border-top:none;}
+  .ladder .dot{width:10px;height:10px;border-radius:50%;border:1px solid var(--dim);flex:none;}
+  .ladder .dot.met{background:var(--up);border-color:var(--up);}
+  .ladder .dot.partial{background:var(--warn);border-color:var(--warn);}
+  .ladder .dot.pending{background:transparent;border-color:var(--dim);}
+  .ladder .rlab{color:var(--fg);}
+  .ladder .rlab .rt2{font-size:0.72em;text-transform:uppercase;letter-spacing:0.5px;color:var(--dim);margin-top:1px;}
+  .ladder .rprice{text-align:right;font-variant-numeric:tabular-nums;}
+  .ladder .rprice .lvl{color:var(--hi);font-weight:700;}
+  .ladder .rprice .dist{font-size:0.8em;color:var(--dim);display:block;}
+  .ladder .rung.wall{border-top:1px solid var(--accent);border-bottom:1px solid var(--accent);background:var(--panel2);padding-left:6px;box-shadow:inset 3px 0 0 var(--accent);}
+  .ladder .rung.wall .rlab{color:var(--accent);font-weight:700;}
+  .ladder .rung.trigger .rlab{font-weight:700;}
+  .ladder .rung.minor{opacity:0.72;font-size:0.92em;}
+  .ladder .rung.target .rlab{color:var(--up);}
+  .ladder .rung.descr .rlab{color:var(--dim);font-style:italic;}
+  .ladder .rung.cur{border-top:2px solid var(--accent2);margin-top:2px;}
+  .ladder .rung.cur .rlab{color:var(--hi);font-weight:700;}
+  .ladder .lad-desc{display:none;color:var(--dim);font-size:0.82em;margin-top:3px;line-height:1.4;font-style:normal;}
+  body.help-on .ladder .lad-desc{display:block;}
+  .ladder .lad-check{margin-top:12px;border-top:1px solid var(--grid);padding-top:10px;}
+  .ladder .lad-check .ct{font-size:0.7em;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin-bottom:6px;}
+  .ladder .lad-check label{display:flex;gap:8px;align-items:flex-start;color:var(--fg);padding:4px 0;cursor:pointer;font-size:0.92em;}
+  .ladder .lad-check input{width:auto;margin-top:2px;}
+  .ladder .lad-check .man-note{color:var(--dim);font-size:0.8em;font-style:italic;margin-top:6px;}
   table{width:100%;border-collapse:collapse;font-size:0.923em;}
   thead th{color:var(--dim);text-align:left;padding:7px 12px;text-transform:uppercase;font-size:0.769em;letter-spacing:1.5px;font-weight:600;border-bottom:1px solid var(--grid);background:var(--panel2);position:sticky;top:0;cursor:pointer;user-select:none;}
   thead th.num,tbody td.num{text-align:right;font-variant-numeric:tabular-nums;}
@@ -774,7 +811,7 @@
     if(t.kind==="scenario"){el.innerHTML=scenarioHTML(t)+notesHTML(t);wireScenario(t);recalcScenario(t,false);wireNotes(t);return;}
     if(!t.data){el.innerHTML=emptyCanvasHTML(t)+notesHTML(t);wireEmptyCanvas(t);wireNotes(t);return;}
     const refs=refLinksHTML(t.ticker);
-    if(t.kind==="scan"){el.innerHTML=scanHTML(t.data)+chartBlockHTML()+riskPanelHTML(t.data)+tsLine(t)+refs+notesHTML(t);wireRisk(el,t.data);loadChart(el,t);wireRefLinks(el);wireNotes(t);return;}
+    if(t.kind==="scan"){el.innerHTML=scanHTML(t.data)+ladderHTML(t.data)+chartBlockHTML()+riskPanelHTML(t.data)+tsLine(t)+refs+notesHTML(t);wireRisk(el,t.data);wireLadder(el,t.data);loadChart(el,t);wireRefLinks(el);wireNotes(t);return;}
     else el.innerHTML=backtestHTML(t.data)+tsLine(t)+refs+notesHTML(t);
     wireRefLinks(el);wireNotes(t);
   }
@@ -863,7 +900,148 @@
     const tbl=dtable([["EMA 9",fmtMoney(a.ema9)],["EMA 20",fmtMoney(a.ema20)],["EMA 200 (target)",fmtMoney(a.ema200),"warn"],["RSI",a.rsi],["ATR",fmtMoney(a.atr)],["Setup quality",a.setup_quality],
       ["Rejection zones",a.rejection_zones.map(fmtMoney).join("  ")||"n/a"],["Support",a.support.map(fmtMoney).join("  ")||"n/a"]]);
     const why=`<pre class="dim">\nWhy:\n${a.reasons.map(r=>"  - "+escapeHtml(r)).join("\n")}</pre>`;
-    return kpiGrid(kp)+tbl+why;
+    return kpiGrid(kp)+verdictBackingHTML(a)+tbl+why;
+  }
+  // ---- Setup Ladder "THE GAUNTLET" + verdict-backing (descriptive, never predictive) ----
+  const _num=(x)=>(typeof x==="number"&&isFinite(x))?x:null;
+  // resolve a usable price: real scan price wins; fall back to chart last close, then entry/EMAs (price can come back null)
+  function ladPrice(a,close){
+    for(const c of [a&&a.price, close, a&&a.entry, a&&a.ema9, a&&a.ema20, a&&a.ema200]){
+      const v=_num(c); if(v!=null)return v;
+    }
+    return null;
+  }
+  const _lastFinite=(arr)=>{if(!Array.isArray(arr))return null;for(let i=arr.length-1;i>=0;i--){const v=_num(arr[i]);if(v!=null)return v;}return null;};
+  const pctFrom=(px,lvl)=>(px&&_num(lvl)!=null)?((lvl-px)/px*100):null;
+  const fmtPct=(p)=>p==null?"":(p>=0?"+":"")+p.toFixed(1)+"%";
+
+  // Component 1: one-line data-cited claim rendered under the verdict — the verdict never shows without a reason
+  function verdictBackingHTML(a){
+    const px=ladPrice(a,null), e9=_num(a.ema9), e20=_num(a.ema20), e200=_num(a.ema200);
+    const v=(a.verdict||"").toLowerCase();
+    const needsReclaim = v.includes("reclaim") || (px!=null&&e9!=null&&e20!=null&&px<Math.max(e9,e20)&&!v.includes("avoid"));
+    let s;
+    if(needsReclaim && e9!=null && e20!=null && px!=null){
+      const hi=Math.max(e9,e20), gap=pctFrom(px,hi);
+      s=`Price <b>${fmtMoney(px)}</b> is below EMA9 <b>${fmtMoney(e9)}</b> and EMA20 <b>${fmtMoney(e20)}</b> — setup <b>ARMS</b> on a weekly close above and holding over both (<b>${fmtPct(gap)}</b> to the ${hi===e20?"20":"9"}-week).`;
+    } else if((v.includes("buy")||v.includes("long")||v.includes("entry"))&&_num(a.entry)!=null){
+      const en=_num(a.entry), sl=_num(a.stop_loss), tp=_num(a.take_profit);
+      s=`Entry near <b>${fmtMoney(en)}</b>`+(sl!=null?`, invalidation <b>${fmtMoney(sl)}</b>`:"")+(tp!=null?`, measured target <b>${fmtMoney(tp)}</b> if it breaks &amp; holds`:"")+(a.r_multiple!=null?`. R-multiple <b>${a.r_multiple}</b>.`:".");
+    } else if(a.reasons&&a.reasons.length){
+      s=escapeHtml(a.reasons[0]);
+    } else if(px!=null&&e200!=null){
+      s=`Price <b>${fmtMoney(px)}</b> vs the 200-week EMA <b>${fmtMoney(e200)}</b> (<b>${fmtPct(pctFrom(px,e200))}</b>).`;
+    } else {
+      s=`Levels below trace to the live scan fields.`;
+    }
+    return `<div class="vbacking">${s}</div>`;
+  }
+
+  // build ordered rungs from live scan fields (top rung = highest level)
+  function ladderRungs(a,close){
+    const px=ladPrice(a,close);
+    const e9=_num(a.ema9), e20=_num(a.ema20), e200=_num(a.ema200);
+    const trigger=(e9!=null&&e20!=null)?Math.max(e9,e20):(e9!=null?e9:e20);
+    const tp=_num(a.take_profit);
+    const items=[];
+    // 5. target (measured) — only if it sits above the wall
+    if(tp!=null && e200!=null && tp>e200){
+      items.push({level:tp,cls:"target",lab:"Measured target",sub:"if it breaks & holds",
+        desc:"Descriptive projection from the scan's take-profit — a price level, not a promise. Only in play after a confirmed hold above the 200-week EMA."});
+    } else if(e200!=null){
+      items.push({level:e200*1.0002,cls:"target descr",noPrice:true,lab:"Target set on breakout",
+        desc:"No measured target above the wall yet — it gets defined once price breaks and holds above the 200-week EMA."});
+    }
+    // 4. break & hold (descriptive) — sits just above the wall
+    if(e200!=null){
+      items.push({level:e200*1.0001,cls:"descr",noPrice:true,lab:"Break & hold above the wall",
+        desc:"A weekly close above the 200-week EMA that survives the retest — the breakout trigger."});
+    }
+    // 3. THE WALL = 200-week EMA (rejection zone at ~ema200 is merged in via the sub-boss filter below)
+    if(e200!=null){
+      items.push({level:e200,cls:"wall",lab:"THE WALL — 200-week EMA",sub:"major rejection / breakout line",
+        desc:"The 200-week EMA is the primary overhead supply. Price must break AND hold above it before the position thesis advances."});
+    }
+    // 2. rejection-zone sub-bosses: above the reclaim trigger, below the wall (merge any within 0.5% of ema200)
+    const rz=Array.isArray(a.rejection_zones)?a.rejection_zones:[];
+    rz.forEach(z=>{const zn=_num(z); if(zn==null)return;
+      if(trigger!=null && zn>trigger && e200!=null && zn < e200*(1-0.005)){
+        items.push({level:zn,cls:"minor",lab:"Supply shelf",sub:"rejection zone",
+          desc:"An intermediate rejection zone from the scan — a level price has stalled at before. Expect chop on the way up."});
+      }
+    });
+    // 1. reclaim & hold the 9/20 (trigger)
+    if(trigger!=null){
+      let st="pending";
+      if(e9!=null&&e20!=null&&px!=null){ if(px>=e9&&px>=e20)st="met"; else if(px>=e9||px>=e20)st="partial"; }
+      items.push({level:trigger,cls:"trigger",state:st,lab:"Reclaim & hold the 9 & 20-week EMAs",
+        sub:`EMA9 ${e9!=null?fmtMoney(e9):"n/a"} · EMA20 ${e20!=null?fmtMoney(e20):"n/a"}`,
+        desc:"The setup ARMS only on a weekly close back above BOTH the 9- and 20-week EMAs that holds. Below both = no trade yet."});
+    }
+    items.forEach(it=>{
+      if(it.state==null) it.state=(px!=null&&px>=it.level)?"met":"pending";
+      it.dist=it.noPrice?null:pctFrom(px,it.level);
+    });
+    items.sort((x,y)=>y.level-x.level);
+    const tRung=items.find(i=>i.cls==="trigger");
+    return {px, items, triggerMet: !!(tRung&&tRung.state==="met")};
+  }
+
+  // Components 2+3+4: full ladder body (slope + rungs + manual checklist)
+  function ladderInner(a,close,slope){
+    const {px,items,triggerMet}=ladderRungs(a,close);
+    const rows=items.map(it=>{
+      const dot=`<span class="dot ${it.state}"></span>`;
+      const priceCell=it.noPrice
+        ? `<div class="rprice"><span class="dist">above 200w</span></div>`
+        : `<div class="rprice"><span class="lvl">${fmtMoney(it.level)}</span><span class="dist">${fmtPct(it.dist)} from price</span></div>`;
+      const sub=it.sub?`<div class="rt2">${escapeHtml(it.sub)}</div>`:"";
+      return `<div class="rung ${it.cls}">${dot}<div class="rlab">${escapeHtml(it.lab)}${sub}<div class="lad-desc">${escapeHtml(it.desc||"")}</div></div>${priceCell}</div>`;
+    }).join("");
+    const nullNote=_num(a.price)==null?`<div class="rt2">last close (scan price came back null)</div>`:"";
+    const curRow=`<div class="rung cur"><span class="dot met"></span><div class="rlab">CURRENT PRICE${nullNote}</div><div class="rprice"><span class="lvl">${px!=null?fmtMoney(px):"n/a"}</span></div></div>`;
+    // Component 3: 200-week slope badge (computed client-side from the chart's ema200 series)
+    const sb=slope||{};
+    let scls="",arrow="",label="—",read="load chart for the 200-week slope";
+    if(sb.dir==="rising"){scls="up";arrow="↑";label="RISING";read="favorable backdrop";}
+    else if(sb.dir==="falling"){scls="down";arrow="↓";label="FALLING";read="headwind — weaker backdrop";}
+    else if(sb.dir==="flat"){scls="flat";arrow="→";label="FLAT";read="favorable backdrop";}
+    const badge=`<div class="lad-badges"><span class="badge ${scls}">200-week EMA: <b>${label} ${arrow}</b> (computed)</span><span class="badge">${escapeHtml(read)}</span></div>`;
+    // Component 4: manual conviction checklist (operator-entered; app fetches no fundamentals)
+    const tk=(a.ticker||"").toUpperCase();
+    let saved={fundamentals:false,catalyst:false};
+    try{const raw=localStorage.getItem("ss_conviction_"+tk);if(raw)saved=Object.assign(saved,JSON.parse(raw));}catch(e){}
+    const check=`<div class="lad-check"><div class="ct">Conviction checklist (you fill these in)</div>
+      <label><input type="checkbox" class="cv-fund"${saved.fundamentals?" checked":""}> Fundamentals reviewed (P/E, forward P/E, valuation)</label>
+      <label><input type="checkbox" class="cv-cat"${saved.catalyst?" checked":""}> Company catalyst — what it's physically doing (news / articles)</label>
+      <label><input type="checkbox" class="cv-tech" disabled${triggerMet?" checked":""}> Technical stage — 9/20 reclaim ${triggerMet?"MET":"not yet"} (auto, read-only)</label>
+      <div class="man-note">You fill these in — the app doesn't fetch fundamentals or news.</div></div>`;
+    return badge+`<div class="rungs">${rows}${curRow}</div>`+check;
+  }
+  function ladderHTML(a){
+    return `<div class="risk ladder"><div class="rt">The Gauntlet — Setup Ladder</div><div class="lad-body">${ladderInner(a,null,null)}</div></div>`;
+  }
+  // 200-week slope: sign + magnitude of (last - ~12 weeks ago)/prior over the ema200 series
+  function computeSlope(ema200){
+    if(!Array.isArray(ema200))return null;
+    let li=-1; for(let i=ema200.length-1;i>=0;i--){if(_num(ema200[i])!=null){li=i;break;}}
+    if(li<0)return null;
+    let pi=-1; for(let i=li-12;i>=0;i--){if(_num(ema200[i])!=null){pi=i;break;}}
+    if(pi<0)for(let i=0;i<li;i++){if(_num(ema200[i])!=null){pi=i;break;}}
+    if(pi<0||pi===li)return null;
+    const last=_num(ema200[li]), prev=_num(ema200[pi]);
+    if(last==null||prev==null||prev===0)return null;
+    const chg=(last-prev)/prev;
+    return {dir:Math.abs(chg)<0.005?"flat":(chg>0?"rising":"falling"), chg};
+  }
+  function wireLadder(el,a){
+    const box=el.querySelector(".ladder"); if(!box||!a)return;
+    const tk=(a.ticker||"").toUpperCase();
+    const save=()=>{try{localStorage.setItem("ss_conviction_"+tk,JSON.stringify({
+      fundamentals:!!(box.querySelector(".cv-fund")&&box.querySelector(".cv-fund").checked),
+      catalyst:!!(box.querySelector(".cv-cat")&&box.querySelector(".cv-cat").checked)}));}catch(e){}};
+    const f=box.querySelector(".cv-fund"); if(f)f.addEventListener("change",save);
+    const c=box.querySelector(".cv-cat"); if(c)c.addEventListener("change",save);
   }
   // ---- interactive price chart (self-contained canvas: crosshair, zoom, pan, draw tools) ----
   function cssv(name){return getComputedStyle(document.body).getPropertyValue(name).trim()||"#888";}
@@ -987,7 +1165,11 @@
     const wrap=el.querySelector(".chartwrap"); if(!wrap||!t.ticker) return;
     const cv=wrap.querySelector(".chartcv");
     try{ const j=await invoke("chart",{ticker:t.ticker,timeframe:(t.data&&t.data.timeframe)||"weekly"});
-      makeChart(wrap,JSON.parse(j));
+      const d=JSON.parse(j);
+      makeChart(wrap,d);
+      // enrich the ladder with the chart's real last close + computed 200-week slope
+      const ladBody=el.querySelector(".ladder .lad-body");
+      if(ladBody&&t.data){ ladBody.innerHTML=ladderInner(t.data,_lastFinite(d.close),computeSlope(d.ema200)); wireLadder(el,t.data); }
     }catch(e){ wrap.innerHTML=`<div class="chtools dim">chart unavailable: ${escapeHtml(String(e))}</div>`; }
   }
 
