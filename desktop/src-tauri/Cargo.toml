@@ -1,7 +1,7 @@
 [package]
 name = "swingr"
 version = "1.4.0"
-description = "StockScanner — EMA swing system (native Rust engine, standalone)"
+description = "Swing R — EMA swing system (native Rust engine, standalone)"
 edition = "2021"
 rust-version = "1.77"
 

@@ -1,4 +1,4 @@
-// StockScanner — Tauri (Rust) desktop app. Self-contained: the scan/backtest commands run
+// Swing R — Tauri (Rust) desktop app. Self-contained: the scan/backtest commands run
 // the NATIVE Rust engine (engine.rs + fetch.rs), which is parity-proven against the Python
 // tool. No Python at runtime — the app is a single standalone binary.
 
@@ -178,7 +178,7 @@ fn choose_folder() -> Result<String, String> {
     }
 }
 
-// Parity harness: `stockscanner --parity <ohlcv.csv>` reads an OHLCV CSV (header:
+// Parity harness: `swingr --parity <ohlcv.csv>` reads an OHLCV CSV (header:
 // Open,High,Low,Close,Volume) and prints the LAST row's indicators as JSON, so it can be
 // diffed against the Python reference (tools/strategy.compute_indicators).
 fn run_parity(csv_path: &str) {
@@ -201,7 +201,7 @@ fn run_parity(csv_path: &str) {
     }
 }
 
-// Scan parity: `stockscanner --scan-parity <ohlcv.csv> <0|1 market_ok>` prints the full
+// Scan parity: `swingr --scan-parity <ohlcv.csv> <0|1 market_ok>` prints the full
 // scan result JSON to diff against ema_analyzer.analyze_frame.
 fn run_scan_parity(csv_path: &str, market_ok: bool) {
     let text = std::fs::read_to_string(csv_path).expect("read csv");
@@ -239,7 +239,7 @@ fn main() {
         run_scan_parity(csv, mkt);
         return;
     }
-    // Backtest parity: `stockscanner --backtest-parity <ohlcv.csv> [atr_mult] [max_hold]`
+    // Backtest parity: `swingr --backtest-parity <ohlcv.csv> [atr_mult] [max_hold]`
     if let Some(pos) = args.iter().position(|a| a == "--backtest-parity") {
         let csv = args.get(pos + 1).expect("--backtest-parity needs a csv path");
         let atr_mult = args.get(pos + 2).and_then(|s| s.parse().ok()).unwrap_or(2.0);
@@ -283,7 +283,7 @@ fn main() {
         match chart_json(t, tf) { Ok(s) => println!("{s}"), Err(e) => { eprintln!("{e}"); std::process::exit(1); } }
         return;
     }
-    // Live fetch + scan (Rust end-to-end): `stockscanner --fetch-scan <TICKER> <weekly|daily>`
+    // Live fetch + scan (Rust end-to-end): `swingr --fetch-scan <TICKER> <weekly|daily>`
     if let Some(pos) = args.iter().position(|a| a == "--fetch-scan") {
         let ticker = args.get(pos + 1).expect("--fetch-scan needs a ticker");
         let tf = args.get(pos + 2).map(|s| s.as_str()).unwrap_or("weekly");
@@ -309,5 +309,5 @@ fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![scan, chart, backtest, save_text, open_url, choose_folder])
         .run(tauri::generate_context!())
-        .expect("error while running StockScanner");
+        .expect("error while running Swing R");
 }
