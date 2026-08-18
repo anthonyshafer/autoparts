@@ -4,10 +4,10 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
-BIN="desktop/src-tauri/target/debug/stockscanner"
+BIN="desktop/src-tauri/target/debug/swingr"
 
 echo "== building rust binary =="
-( cd desktop/src-tauri && cargo build --bin stockscanner --quiet )
+( cd desktop/src-tauri && cargo build --bin swingr --quiet )
 echo "== generating fixtures =="
 uv run tests/parity/gen_fixture.py >/dev/null
 

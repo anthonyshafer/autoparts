@@ -1,4 +1,4 @@
-# Competitor Research — Swing/Position Trading Tools vs StockScanner
+# Competitor Research — Swing/Position Trading Tools vs Swing R
 
 **As-of:** 2026-08-17. SaaS pricing changes often — treat all $ figures as point-in-time
 snapshots. Claims sourced from official pricing pages where fetched; unverifiable items are
@@ -19,7 +19,7 @@ alerts, risk-% sizing, or earnings-awareness.
 | **TradingView** | Yes | Yes | Yes (Pine Strategy Tester) | Yes (≤1,000) | Community scripts only | CANNOT VERIFY native | **No** (confirmed absent) | No | Free tier + $12.95–$199.95/mo |
 | **Finviz Elite** | Yes (70+ filters) | Basic | Screener-criteria only | Yes | No | **Yes** (filter + calendar) | No | No | $39.50/mo (~$24.96 annual) |
 | **Trade Ideas** | Yes (Holly AI) | Yes | Yes (day-trade) | Yes | CANNOT VERIFY | CANNOT VERIFY | No | No (paid curated picks) | CANNOT VERIFY (~$89–$254/mo) |
-| **StockScanner (ours)** | **No** | **No** | Yes (walk-forward) | **No** | **No** | **No** | **Yes** (manual) | **Yes** | **Free, local** |
+| **Swing R (ours)** | **No** | **No** | Yes (walk-forward) | **No** | **No** | **No** | **Yes** (manual) | **Yes** | **Free, local** |
 
 ## Table stakes we lack (evidence: present in all 6)
 1. **Market-wide screener** — all 6. The single most consistent feature in the category.

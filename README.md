@@ -22,8 +22,13 @@ binary — **no Python, venv, or repo needed at runtime.** The Rust engine is a 
 of the Python tool below, verified bar-for-bar by the parity suite in `tests/parity/`
 (indicators, scan verdict/levels/reasons, and backtest all match the Python reference).
 
-- **Download:** the Releases page (`StockScanner.dmg`), built by `.github/workflows/build-desktop.yml`.
-- **Build locally:** `cd desktop && cargo tauri build` → `desktop/src-tauri/target/release/bundle/`.
+- **Download:** the Releases page — a `.dmg` (macOS, contains `Swing R.app`) or a
+  `.exe` NSIS installer (Windows), both built by `.github/workflows/build-desktop.yml`.
+- **Build locally (macOS):** `cd desktop && cargo tauri build` → `desktop/src-tauri/target/release/bundle/`.
+- **Build locally (Windows):** on Windows with the Rust toolchain + Node, run
+  `cd desktop && cargo tauri build --bundles nsis` → the `.exe` lands in
+  `desktop/src-tauri/target/release/bundle/nsis/`. Note: you cannot cross-compile the
+  Windows `.exe` from macOS; use a Windows machine or the CI workflow's `windows-latest` runner.
 - The Python CLI below remains the reference implementation and the parity oracle.
 
 ---
@@ -42,29 +47,25 @@ Give it a ticker; it returns:
 
 ## Install
 
-### Windows app — single `.exe`, nothing to install (easiest)
+### macOS app — `Swing R.app`, nothing to install (easiest)
 
-Get a standalone `StockScanner.exe` (bundles Python + everything — no venv, no PATH setup):
+Swing R is a **native Rust + Tauri** app. The whole engine is compiled into the binary — there
+is **no Python at runtime, no venv, and nothing to install.** Native builds exist for both
+**macOS** (`.dmg`) and **Windows** (`.exe` NSIS installer).
 
-- **Auto-built for you:** the GitHub Actions workflow (`.github/workflows/build-windows.yml`)
-  compiles the `.exe` on GitHub's Windows machines. Go to the repo's **Actions** tab →
-  latest "Build Windows App" run → download the **StockScanner-windows** artifact. Or tag
-  a release (`git tag v1.0 && git push --tags`) to get a clean Releases download page.
-- **Build it yourself once:** on any Windows PC with Python 3.10+, double-click
-  **`build_windows.bat`** → produces `dist\StockScanner.exe`. Copy that single file to any
-  Windows PC and double-click — the end user needs no Python at all.
+- **Auto-built:** the GitHub Actions workflow (`.github/workflows/build-desktop.yml`) builds
+  the `.dmg`/`.app` on a Mac runner and the `.exe` on a Windows runner → **Actions** tab →
+  latest run → download the **SwingR-desktop-macos-latest** or **SwingR-desktop-windows-latest**
+  artifact. Or tag a release (`git tag v1.0 && git push --tags`) to get a clean Releases
+  download page with both installers.
+- **Build it yourself:** on a Mac with the Rust toolchain, run
+  `cd desktop && cargo tauri build` → the `.dmg`/`.app` land in
+  `desktop/src-tauri/target/release/bundle/`.
+- **Install:** open the `.dmg`, drag **Swing R** onto **Applications**.
+- First launch: if Gatekeeper blocks the unsigned app, right-click → **Open** → **Open**, or run
+  `xattr -dr com.apple.quarantine "/Applications/Swing R.app"`.
 
 The app is a simple window: type a ticker, pick weekly/daily, click **Scan** or **Backtest**.
-
-### macOS app — `StockScanner.app`, nothing to install
-
-- **Auto-built:** the GitHub Actions workflow (`.github/workflows/build-apps.yml`) builds the
-  `.app` on GitHub's Mac runners → **Actions** tab → latest run → download **StockScanner-macos**
-  (a zip of the app).
-- **Build it yourself once:** on a Mac with Python 3.10+, run **`./build_macos.sh`** →
-  `dist/StockScanner.app`. Double-click it or drag to `/Applications`.
-- First launch: if Gatekeeper blocks the unsigned app, right-click → **Open** → **Open**, or run
-  `xattr -dr com.apple.quarantine dist/StockScanner.app`.
 
 ### Command line (Python)
 
