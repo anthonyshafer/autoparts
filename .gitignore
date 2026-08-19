@@ -13,6 +13,9 @@ __pycache__/
 *.spec.bak
 # tauri / rust build artifacts
 desktop/src-tauri/target/
+
+# Tauri generated schemas (regenerated on build)
+desktop/src-tauri/gen/
 # node
 node_modules/
 

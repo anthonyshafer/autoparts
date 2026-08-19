@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>StockScanner</title>
+<title>SwingR</title>
 <style>
   /* Bloomberg-style hierarchy: light-gray body text, WHITE key figures, AMBER accents,
      green/red data, thin gridlines. Amber is an accent, not the body color. */
@@ -17,6 +17,201 @@
   [data-theme="light"]{--bg:#eceef1;--panel:#fff;--panel2:#f6f7f9;--fg:#2a2f36;--dim:#6b7280;--hi:#000;--accent:#b45309;--accent2:#d97706;--field:#fff;--field-fg:#111;--up:#0a8a2a;--down:#c0271a;--warn:#a86910;--grid:#dcdfe4;--rowhover:#f0f2f5;--sel:#fdf2df;}
   /* Commodore 64 — classic blue screen, light-blue text (Pepto palette) */
   [data-theme="c64"]{--bg:#2b2170;--panel:#332a86;--panel2:#3c33a0;--fg:#cfcaff;--dim:#9a90e8;--hi:#ffffff;--accent:#eaf28a;--accent2:#f5fbb0;--field:#241b60;--field-fg:#eae6ff;--up:#b6ff9a;--down:#ff8f94;--warn:#eaf28a;--grid:#544ab8;--rowhover:#3a3199;--sel:#4a41ad;}
+
+  /* ===== Apple ][ — green-phosphor 2-color text-mode ===== */
+  [data-theme="apple2"]{--bg:#000000;--panel:#000000;--panel2:#000000;--fg:#33ff33;--dim:#1f9e2a;--hi:#33ff33;--accent:#33ff33;--accent2:#33ff33;--field:#000000;--field-fg:#33ff33;--up:#33ff33;--down:#1f9e2a;--warn:#33ff33;--grid:#1f9e2a;--rowhover:#001a00;--sel:#33ff33;
+    --ix-buy:#33ff33;--ix-sell:#1f9e2a;--ix-neutral:#1f9e2a;--ix-line:#33ff33;--ix-measure:#33ff33;--ix-label-bg:#33ff33;--ix-label-fg:#000000;
+    --app-font:"SF Mono","Menlo","Consolas",monospace;--app-weight:400;
+    --accent-fg:#000;--overlay-bg:rgba(0,0,0,.6);--shadow-color:rgba(0,0,0,.6);--on-down:#fff;}
+  [data-theme="apple2"]{letter-spacing:1px;}
+  [data-theme="apple2"] body,[data-theme="apple2"] .tab,[data-theme="apple2"] button,[data-theme="apple2"] .brand,[data-theme="apple2"] .cell .v,[data-theme="apple2"] table{text-transform:uppercase;letter-spacing:1px;}
+  [data-theme="apple2"] header,[data-theme="apple2"] .cell,[data-theme="apple2"] .chartwrap,[data-theme="apple2"] .risk,[data-theme="apple2"] .slider,[data-theme="apple2"] .dtwrap,[data-theme="apple2"] .reflinks.card,[data-theme="apple2"] #sidebar{border:2px solid var(--fg);border-radius:0;}
+  [data-theme="apple2"] .cell{border-left:2px solid var(--fg);}
+  [data-theme="apple2"] .brand::before{content:"]";margin-right:4px;}
+  [data-theme="apple2"] button,[data-theme="apple2"] input,[data-theme="apple2"] select{border:2px solid var(--fg);border-radius:0;background:#000;color:var(--field-fg);}
+  [data-theme="apple2"] button:hover,[data-theme="apple2"] button.primary{background:var(--accent);color:var(--accent-fg);}
+  [data-theme="apple2"] .tab{border:2px solid var(--dim);border-radius:0;}
+  [data-theme="apple2"] .tab.active{background:var(--accent);color:var(--accent-fg);}
+  [data-theme="apple2"] tbody tr.sel td,[data-theme="apple2"] tbody tr:hover td{background:var(--accent);color:var(--accent-fg);}
+
+  /* ===== Mac System 6 — 1-bit black & white ===== */
+  [data-theme="system6"]{--bg:#ffffff;--panel:#ffffff;--panel2:#ffffff;--fg:#000000;--dim:#808080;--hi:#000000;--accent:#000000;--accent2:#000000;--field:#ffffff;--field-fg:#000000;--up:#000000;--down:#000000;--warn:#000000;--grid:#000000;--rowhover:#808080;--sel:#000000;
+    --ix-buy:#000000;--ix-sell:#000000;--ix-neutral:#000000;--ix-line:#000000;--ix-measure:#000000;--ix-label-bg:#000000;--ix-label-fg:#ffffff;
+    --app-font:"Chicago","Charcoal","Helvetica Neue",Helvetica,Arial,sans-serif;--app-weight:700;
+    --accent-fg:#fff;--overlay-bg:rgba(0,0,0,.5);--shadow-color:#000;--on-down:#fff;}
+  [data-theme="system6"] body{background:
+      repeating-conic-gradient(#808080 0 25%, #ffffff 0 50%) 0 0/6px 6px;}
+  [data-theme="system6"] header{background:repeating-linear-gradient(#000 0 1px,#fff 1px 3px);border-bottom:2px solid #000;}
+  [data-theme="system6"] header label{background:#fff;padding:0 3px;}
+  [data-theme="system6"] .brand{background:#fff;padding:2px 8px;border:1px solid #000;color:#000;}
+  [data-theme="system6"] .cell,[data-theme="system6"] .chartwrap,[data-theme="system6"] .risk,[data-theme="system6"] .slider,[data-theme="system6"] .dtwrap,[data-theme="system6"] .reflinks.card,[data-theme="system6"] #sidebar,[data-theme="system6"] aside#help{border:1px solid #000;border-radius:0;box-shadow:2px 2px 0 #000;background:#fff;}
+  [data-theme="system6"] .cell{border-left:1px solid #000;}
+  [data-theme="system6"] button{border:1px solid #000;border-radius:0;background:#fff;color:#000;box-shadow:1px 1px 0 #000;}
+  [data-theme="system6"] button:hover{background:#000;color:#fff;}
+  [data-theme="system6"] button.primary{border:2px solid #000;box-shadow:2px 2px 0 #000;font-weight:700;}
+  [data-theme="system6"] input,[data-theme="system6"] select{border:1px solid #000;border-radius:0;background:#fff;color:#000;}
+  [data-theme="system6"] .tab{border:1px solid #000;border-radius:0;background:#fff;color:#000;}
+  [data-theme="system6"] .tab.active{background:#000;color:#fff;}
+  [data-theme="system6"] tbody tr.sel td,[data-theme="system6"] tbody tr:hover td{background:#000;color:#fff;}
+
+  /* ===== Windows NT 4 — raised 3D bevels, navy gradient title bars ===== */
+  [data-theme="winnt"]{--bg:#808080;--panel:#c0c0c0;--panel2:#c0c0c0;--fg:#000000;--dim:#000080;--hi:#000000;--accent:#000080;--accent2:#1084d0;--field:#ffffff;--field-fg:#000000;--up:#008000;--down:#800000;--warn:#000080;--grid:#808080;--rowhover:#ffffff;--sel:#000080;
+    --ix-buy:#008000;--ix-sell:#800000;--ix-neutral:#000000;--ix-line:#000080;--ix-measure:#1084d0;--ix-label-bg:#c0c0c0;--ix-label-fg:#000000;
+    --app-font:"Tahoma","MS Sans Serif","Geneva",sans-serif;--app-weight:400;
+    --accent-fg:#fff;--overlay-bg:rgba(0,0,0,.6);--shadow-color:rgba(0,0,0,.6);--on-down:#fff;}
+  [data-theme="winnt"] header{background:linear-gradient(90deg,#000080,#1084d0);border-bottom:2px solid #000;}
+  [data-theme="winnt"] header label,[data-theme="winnt"] .brand{color:#fff;}
+  [data-theme="winnt"] .cell,[data-theme="winnt"] .chartwrap,[data-theme="winnt"] .risk,[data-theme="winnt"] .slider,[data-theme="winnt"] .dtwrap,[data-theme="winnt"] .reflinks.card,[data-theme="winnt"] #sidebar{background:var(--panel);border:2px solid var(--panel);border-radius:0;box-shadow:inset 1px 1px 0 #fff,inset -1px -1px 0 #000,inset 2px 2px 0 #dfdfdf,inset -2px -2px 0 #808080;}
+  [data-theme="winnt"] .risk .rt,[data-theme="winnt"] .chartwrap .chtools{background:linear-gradient(90deg,#000080,#1084d0);color:#fff;}
+  [data-theme="winnt"] button,[data-theme="winnt"] .tab{background:var(--panel);color:#000;border:2px solid;border-color:#fff #000 #000 #fff;border-radius:0;box-shadow:inset -1px -1px 0 #808080,inset 1px 1px 0 #dfdfdf;}
+  [data-theme="winnt"] button:hover{color:#000;border-color:#fff #000 #000 #fff;}
+  [data-theme="winnt"] button:active{border-color:#000 #fff #fff #000;box-shadow:inset 1px 1px 0 #808080;}
+  [data-theme="winnt"] button.primary{background:var(--panel);color:#000;}
+  [data-theme="winnt"] input,[data-theme="winnt"] select{background:#fff;color:#000;border:2px solid;border-color:#000 #fff #fff #000;border-radius:0;}
+  [data-theme="winnt"] .tab.active{background:var(--accent);color:#fff;}
+  [data-theme="winnt"] tbody tr.sel td{background:var(--sel);color:#fff;}
+
+  /* ===== Windows 3.11 — Program Manager, flat navy title bars, teal desktop ===== */
+  [data-theme="win311"]{--bg:#008080;--panel:#c0c0c0;--panel2:#c0c0c0;--fg:#000000;--dim:#808080;--hi:#000000;--accent:#000080;--accent2:#000080;--field:#ffffff;--field-fg:#000000;--up:#008000;--down:#800000;--warn:#000080;--grid:#808080;--rowhover:#ffffff;--sel:#000080;
+    --ix-buy:#008000;--ix-sell:#800000;--ix-neutral:#000000;--ix-line:#000080;--ix-measure:#000080;--ix-label-bg:#c0c0c0;--ix-label-fg:#000000;
+    --app-font:"Tahoma","MS Sans Serif","Geneva",sans-serif;--app-weight:400;
+    --accent-fg:#fff;--overlay-bg:rgba(0,0,0,.6);--shadow-color:rgba(0,0,0,.6);--on-down:#fff;}
+  [data-theme="win311"] header{background:var(--accent);border-bottom:3px solid var(--panel);}
+  [data-theme="win311"] header label,[data-theme="win311"] .brand{color:#fff;}
+  [data-theme="win311"] .cell,[data-theme="win311"] .chartwrap,[data-theme="win311"] .risk,[data-theme="win311"] .slider,[data-theme="win311"] .dtwrap,[data-theme="win311"] .reflinks.card,[data-theme="win311"] #sidebar{background:var(--panel);border:3px solid;border-color:#fff #808080 #808080 #fff;border-radius:0;}
+  [data-theme="win311"] .risk .rt,[data-theme="win311"] .chartwrap .chtools{background:var(--accent);color:#fff;}
+  [data-theme="win311"] button,[data-theme="win311"] .tab{background:var(--panel);color:#000;border:3px solid;border-color:#fff #808080 #808080 #fff;border-radius:0;box-shadow:inset -1px -1px 0 #808080,inset 1px 1px 0 #fff;}
+  [data-theme="win311"] button:active{border-color:#808080 #fff #fff #808080;}
+  [data-theme="win311"] button.primary{background:var(--panel);color:#000;}
+  [data-theme="win311"] input,[data-theme="win311"] select{background:#fff;color:#000;border:2px solid;border-color:#808080 #fff #fff #808080;border-radius:0;}
+  [data-theme="win311"] .tab.active{background:var(--accent);color:#fff;}
+  [data-theme="win311"] tbody tr.sel td{background:var(--sel);color:#fff;}
+
+  /* ===== Amiga Workbench 1.x — 4-color blue/white/black/orange ===== */
+  [data-theme="amiga"]{--bg:#0055aa;--panel:#ffffff;--panel2:#ffffff;--fg:#000000;--dim:#0055aa;--hi:#000000;--accent:#ff8800;--accent2:#0055aa;--field:#ffffff;--field-fg:#000000;--up:#0055aa;--down:#ff8800;--warn:#ff8800;--grid:#000000;--rowhover:#0055aa;--sel:#ff8800;
+    --ix-buy:#0055aa;--ix-sell:#ff8800;--ix-neutral:#000000;--ix-line:#ff8800;--ix-measure:#0055aa;--ix-label-bg:#000000;--ix-label-fg:#ff8800;
+    --app-font:"Topaz","Topaz-8","Courier New",monospace;--app-weight:700;
+    --accent-fg:#000;--overlay-bg:rgba(0,0,0,.6);--shadow-color:rgba(0,0,0,.6);--on-down:#000;}
+  [data-theme="amiga"] header{background:var(--panel);border-bottom:2px solid #000;}
+  [data-theme="amiga"] .brand{color:#000;background:var(--accent);padding:2px 8px;border:2px solid #000;}
+  [data-theme="amiga"] .cell,[data-theme="amiga"] .chartwrap,[data-theme="amiga"] .risk,[data-theme="amiga"] .slider,[data-theme="amiga"] .dtwrap,[data-theme="amiga"] .reflinks.card,[data-theme="amiga"] #sidebar{background:#fff;border:2px solid #000;border-radius:0;box-shadow:inset 1px 1px 0 #fff,inset -2px -2px 0 #000,2px 2px 0 #000;}
+  [data-theme="amiga"] .cell{border-left:3px solid var(--accent);}
+  [data-theme="amiga"] .risk .rt,[data-theme="amiga"] .chartwrap .chtools{background:var(--accent);color:var(--accent-fg);}
+  [data-theme="amiga"] button,[data-theme="amiga"] .tab{background:#fff;color:#000;border:2px solid #000;border-radius:0;box-shadow:inset 1px 1px 0 #fff,inset -2px -2px 0 #000;}
+  [data-theme="amiga"] button:hover,[data-theme="amiga"] button.primary{background:var(--accent);color:var(--accent-fg);}
+  [data-theme="amiga"] input,[data-theme="amiga"] select{background:#fff;color:#000;border:2px solid #000;border-radius:0;}
+  [data-theme="amiga"] .tab.active{background:var(--accent2);color:#fff;}
+  [data-theme="amiga"] tbody tr.sel td{background:var(--sel);color:#000;}
+  [data-theme="amiga"] tbody tr:hover td{background:var(--rowhover);color:#fff;}
+
+  /* ===== NeXTSTEP — grayscale, black title bars, embossed bevels ===== */
+  [data-theme="next"]{--bg:#aaaaaa;--panel:#aaaaaa;--panel2:#cccccc;--fg:#000000;--dim:#555555;--hi:#000000;--accent:#000000;--accent2:#555555;--field:#cccccc;--field-fg:#000000;--up:#000000;--down:#555555;--warn:#555555;--grid:#808080;--rowhover:#cccccc;--sel:#555555;
+    --ix-buy:#000000;--ix-sell:#555555;--ix-neutral:#808080;--ix-line:#000000;--ix-measure:#555555;--ix-label-bg:#000000;--ix-label-fg:#ffffff;
+    --app-font:"Helvetica Neue",Helvetica,Arial,sans-serif;--app-weight:400;
+    --accent-fg:#fff;--overlay-bg:rgba(0,0,0,.5);--shadow-color:rgba(0,0,0,.6);--on-down:#fff;}
+  [data-theme="next"] header{background:var(--accent);border-bottom:1px solid #000;}
+  [data-theme="next"] header label,[data-theme="next"] .brand{color:#fff;}
+  [data-theme="next"] .cell,[data-theme="next"] .chartwrap,[data-theme="next"] .risk,[data-theme="next"] .slider,[data-theme="next"] .dtwrap,[data-theme="next"] .reflinks.card,[data-theme="next"] #sidebar{background:var(--panel);border:1px solid #555;border-radius:0;box-shadow:inset 1px 1px 0 #ccc,inset -1px -1px 0 #555;}
+  [data-theme="next"] .risk .rt,[data-theme="next"] .chartwrap .chtools{background:#000;color:#fff;}
+  [data-theme="next"] button,[data-theme="next"] .tab{background:var(--panel2);color:#000;border:1px solid #555;border-radius:2px;box-shadow:inset 1px 1px 0 #fff,inset -1px -1px 0 #808080;}
+  [data-theme="next"] button:active{box-shadow:inset -1px -1px 0 #fff,inset 1px 1px 0 #808080;}
+  [data-theme="next"] button.primary{background:#000;color:#fff;border-color:#000;}
+  [data-theme="next"] input,[data-theme="next"] select{background:#ccc;color:#000;border:1px solid #555;border-radius:0;box-shadow:inset 1px 1px 0 #808080;}
+  [data-theme="next"] .tab.active{background:#000;color:#fff;}
+  [data-theme="next"] tbody tr.sel td{background:#555;color:#fff;}
+
+  /* ===== DOS / ANSI BBS — 16-color ANSI on black, CP437 box borders ===== */
+  [data-theme="dos"]{--bg:#000000;--panel:#000000;--panel2:#000000;--fg:#aaaaaa;--dim:#555555;--hi:#ffffff;--accent:#55ffff;--accent2:#ffff55;--field:#000000;--field-fg:#55ff55;--up:#55ff55;--down:#ff5555;--warn:#ffff55;--grid:#555555;--rowhover:#0000aa;--sel:#0000aa;
+    --ix-buy:#55ff55;--ix-sell:#ff5555;--ix-neutral:#aaaaaa;--ix-line:#55ffff;--ix-measure:#ffff55;--ix-label-bg:#55ffff;--ix-label-fg:#000000;
+    --app-font:"Consolas","Courier New",monospace;--app-weight:400;
+    --accent-fg:#000;--overlay-bg:rgba(0,0,0,.6);--shadow-color:rgba(0,0,0,.6);--on-down:#fff;}
+  [data-theme="dos"] .cell,[data-theme="dos"] .chartwrap,[data-theme="dos"] .risk,[data-theme="dos"] .slider,[data-theme="dos"] .dtwrap,[data-theme="dos"] .reflinks.card,[data-theme="dos"] #sidebar,[data-theme="dos"] header{border:3px double var(--accent);border-radius:0;}
+  [data-theme="dos"] .cell{border-left:3px double #ff55ff;}
+  [data-theme="dos"] .brand{color:var(--accent2);}
+  [data-theme="dos"] .brand::before{content:"\2554\2550\2557 ";color:var(--accent);}
+  [data-theme="dos"] .risk .rt{color:#ff55ff;}
+  [data-theme="dos"] button,[data-theme="dos"] .tab{border:1px solid var(--accent);border-radius:0;background:#000;color:var(--fg);}
+  [data-theme="dos"] button:hover,[data-theme="dos"] button.primary{background:var(--accent);color:var(--accent-fg);}
+  [data-theme="dos"] input,[data-theme="dos"] select{border:1px solid var(--accent);border-radius:0;background:#000;color:var(--field-fg);}
+  [data-theme="dos"] .tab.active{background:var(--sel);color:var(--hi);}
+  [data-theme="dos"] tbody tr.sel td,[data-theme="dos"] tbody tr:hover td{background:var(--sel);color:var(--hi);}
+
+  /* ===== Windows Vista (Aero) — frosted glass chrome, glossy pill buttons ===== */
+  [data-theme="vista"]{--bg:#0f1e33;--panel:#1b2c47;--panel2:#223a5c;--fg:#e8f0fb;--dim:#8fa8c8;--hi:#ffffff;--accent:#3c9ade;--accent2:#6cc0f5;--field:#22344f;--field-fg:#eef5ff;--up:#4fe08a;--down:#ff6b6b;--warn:#ffcf40;--grid:#33465f;--rowhover:#21375a;--sel:#274b74;
+    --ix-buy:#4fe08a;--ix-sell:#ff6b6b;--ix-neutral:#8fa8c8;--ix-line:#3c9ade;--ix-measure:#ffcf40;--ix-label-bg:#1b2c47;--ix-label-fg:#eef5ff;
+    --app-font:"Segoe UI","Tahoma",sans-serif;
+    --accent-fg:#ffffff;--overlay-bg:rgba(6,16,30,.6);--shadow-color:rgba(60,154,222,.4);--on-down:#fff;}
+  [data-theme="vista"] body{background:linear-gradient(180deg,#0a1a2f,#15243d);}
+  [data-theme="vista"] header{background:linear-gradient(180deg,rgba(60,120,190,.45),rgba(20,45,80,.35));backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid rgba(140,190,240,.35);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 2px 8px rgba(0,0,0,.4);}
+  [data-theme="vista"] .brand{color:#eaf3ff;text-shadow:0 1px 2px rgba(0,0,0,.6);}
+  [data-theme="vista"] .cell,[data-theme="vista"] .chartwrap,[data-theme="vista"] .risk,[data-theme="vista"] .slider,[data-theme="vista"] .dtwrap,[data-theme="vista"] .reflinks.card,[data-theme="vista"] #sidebar,[data-theme="vista"] aside#help{background:rgba(27,44,71,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid rgba(120,170,225,.28);border-radius:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 4px 14px rgba(0,0,0,.45);}
+  [data-theme="vista"] .risk .rt,[data-theme="vista"] .chartwrap .chtools{background:linear-gradient(180deg,rgba(60,120,190,.5),rgba(20,45,80,.4));backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#eaf3ff;}
+  [data-theme="vista"] button,[data-theme="vista"] .tab{background:linear-gradient(180deg,#eaf6ff 0,#bfe0f7 48%,#8ec4ec 52%,#a9d4f2 100%);color:#0a2b4a;border:1px solid #2f6fa0;border-radius:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 1px 3px rgba(0,0,0,.4);text-shadow:0 1px 0 rgba(255,255,255,.5);}
+  [data-theme="vista"] button:hover{background:linear-gradient(180deg,#f4fbff 0,#cfeaff 48%,#a0d2f2 52%,#bfe2f8 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 0 8px rgba(90,180,240,.7);}
+  [data-theme="vista"] button:active{background:linear-gradient(180deg,#8ec4ec,#bfe0f7);box-shadow:inset 0 2px 4px rgba(0,0,0,.35);}
+  [data-theme="vista"] button.primary{border-color:#2f6fa0;box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 0 10px rgba(90,180,240,.6);font-weight:700;}
+  [data-theme="vista"] input,[data-theme="vista"] select{background:rgba(34,52,79,.85);color:#eef5ff;border:1px solid #3c6a99;border-radius:5px;box-shadow:inset 0 1px 3px rgba(0,0,0,.5);}
+  [data-theme="vista"] .tab.active{background:linear-gradient(180deg,#f4fbff,#bfe0f7);color:#0a2b4a;}
+  [data-theme="vista"] tbody tr.sel td{background:linear-gradient(180deg,#3c9ade,#2f7bbf);color:#fff;}
+  [data-theme="vista"] tbody tr:hover td{background:var(--rowhover);}
+
+  /* ===== Mac OS X Aqua — pinstripe bg, gel candy buttons, traffic lights ===== */
+  [data-theme="aqua"]{--bg:#ececec;--panel:#f6f6f6;--panel2:#eaeaea;--fg:#1d1d1f;--dim:#6b6b6b;--hi:#000000;--accent:#2f7fff;--accent2:#5a9bff;--field:#ffffff;--field-fg:#111111;--up:#1a8a34;--down:#d0342b;--warn:#c07000;--grid:#c7c7c7;--rowhover:#f0f4fb;--sel:#3875d7;
+    --ix-buy:#1a8a34;--ix-sell:#d0342b;--ix-neutral:#6b6b6b;--ix-line:#2f7fff;--ix-measure:#c07000;--ix-label-bg:#3875d7;--ix-label-fg:#ffffff;
+    --app-font:"Lucida Grande","Helvetica Neue",Helvetica,sans-serif;
+    --accent-fg:#ffffff;--overlay-bg:rgba(0,0,0,.3);--shadow-color:rgba(0,0,0,.18);--on-down:#fff;}
+  [data-theme="aqua"] body{background:#ececec;background-image:repeating-linear-gradient(0deg,rgba(0,0,0,.035) 0 1px,transparent 1px 4px);}
+  [data-theme="aqua"] header{background:linear-gradient(180deg,#fbfbfb,#d9d9d9);border-bottom:1px solid #9a9a9a;box-shadow:inset 0 1px 0 #fff;}
+  [data-theme="aqua"] .brand{color:#1d1d1f;}
+  [data-theme="aqua"] .brand::before{content:"";display:inline-block;width:44px;height:12px;margin-right:6px;background:radial-gradient(circle at 6px 6px,#ff5f57 0 5px,transparent 6px),radial-gradient(circle at 22px 6px,#febc2e 0 5px,transparent 6px),radial-gradient(circle at 38px 6px,#28c840 0 5px,transparent 6px);}
+  [data-theme="aqua"] .cell,[data-theme="aqua"] .chartwrap,[data-theme="aqua"] .risk,[data-theme="aqua"] .slider,[data-theme="aqua"] .dtwrap,[data-theme="aqua"] .reflinks.card,[data-theme="aqua"] #sidebar,[data-theme="aqua"] aside#help{background:#f6f6f6;background-image:repeating-linear-gradient(0deg,rgba(0,0,0,.025) 0 1px,transparent 1px 4px);border:1px solid #b9b9b9;border-radius:8px;box-shadow:inset 0 1px 0 #fff,0 1px 3px rgba(0,0,0,.18);}
+  [data-theme="aqua"] .risk .rt,[data-theme="aqua"] .chartwrap .chtools{background:linear-gradient(180deg,#fbfbfb,#dcdcdc);color:#1d1d1f;border-bottom:1px solid #b9b9b9;}
+  [data-theme="aqua"] button,[data-theme="aqua"] .tab{background:linear-gradient(180deg,#ffffff 0,#f0f0f0 48%,#dcdcdc 52%,#f2f2f2 100%);color:#1d1d1f;border:1px solid #9a9a9a;border-radius:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 1px 2px rgba(0,0,0,.2);}
+  [data-theme="aqua"] button:hover{background:linear-gradient(180deg,#ffffff,#e6e6e6);}
+  [data-theme="aqua"] button:active{background:linear-gradient(180deg,#dcdcdc,#f0f0f0);box-shadow:inset 0 2px 3px rgba(0,0,0,.2);}
+  [data-theme="aqua"] button.primary{background:linear-gradient(180deg,#a9ccff 0,#4f8ff5 48%,#1f66e0 52%,#5a9bff 100%);color:#fff;border:1px solid #1a54c0;box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 1px 3px rgba(0,0,0,.3);text-shadow:0 -1px 0 rgba(0,0,0,.25);font-weight:700;}
+  [data-theme="aqua"] input,[data-theme="aqua"] select{background:#fff;color:#111;border:1px solid #a9a9a9;border-radius:6px;box-shadow:inset 0 1px 2px rgba(0,0,0,.12);}
+  [data-theme="aqua"] .tab.active{background:linear-gradient(180deg,#a9ccff,#4f8ff5);color:#fff;}
+  [data-theme="aqua"] tbody tr.sel td{background:linear-gradient(180deg,#4f8ff5,#2f6fe0);color:#fff;}
+  [data-theme="aqua"] tbody tr:hover td{background:var(--rowhover);}
+
+  /* ===== iPhone OS 1 — glossy navy nav bars, glossy blue pill buttons ===== */
+  [data-theme="iphone1"]{--bg:#000000;--panel:#101a2b;--panel2:#16233a;--fg:#ffffff;--dim:#8a97a8;--hi:#ffffff;--accent:#3b6fd6;--accent2:#6f9bec;--field:#1a2740;--field-fg:#ffffff;--up:#3ad07a;--down:#ff5b5b;--warn:#ffcf40;--grid:#2b3a54;--rowhover:#16233a;--sel:#24406b;
+    --ix-buy:#3ad07a;--ix-sell:#ff5b5b;--ix-neutral:#8a97a8;--ix-line:#3b6fd6;--ix-measure:#ffcf40;--ix-label-bg:#101a2b;--ix-label-fg:#ffffff;
+    --app-font:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    --accent-fg:#ffffff;--overlay-bg:rgba(0,0,0,.6);--shadow-color:rgba(0,0,0,.6);--on-down:#fff;}
+  [data-theme="iphone1"] header{background:linear-gradient(180deg,#2a3f5f,#101b30);border-bottom:1px solid #000;box-shadow:inset 0 1px 0 rgba(255,255,255,.28);}
+  [data-theme="iphone1"] .brand{color:#fff;font-weight:700;text-shadow:0 -1px 0 rgba(0,0,0,.6);}
+  [data-theme="iphone1"] .cell,[data-theme="iphone1"] .chartwrap,[data-theme="iphone1"] .risk,[data-theme="iphone1"] .slider,[data-theme="iphone1"] .dtwrap,[data-theme="iphone1"] .reflinks.card,[data-theme="iphone1"] #sidebar,[data-theme="iphone1"] aside#help{background:linear-gradient(180deg,#16233a,#101a2b);border:1px solid #263a58;border-radius:10px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 1px 3px rgba(0,0,0,.6);}
+  [data-theme="iphone1"] .risk .rt,[data-theme="iphone1"] .chartwrap .chtools{background:linear-gradient(180deg,#2a3f5f,#101b30);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.2);}
+  [data-theme="iphone1"] button,[data-theme="iphone1"] .tab{background:linear-gradient(180deg,#6f9bec 0,#3b6fd6 50%,#2f5cc0 51%,#3b6fd6 100%);color:#fff;border:1px solid #22408a;border-radius:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 1px 2px rgba(0,0,0,.5);text-shadow:0 -1px 0 rgba(0,0,0,.4);}
+  [data-theme="iphone1"] button:hover{background:linear-gradient(180deg,#8bb0f2 0,#4f80e0 50%,#3b6fd6 51%,#4f80e0 100%);}
+  [data-theme="iphone1"] button:active{background:linear-gradient(180deg,#2f5cc0,#3b6fd6);box-shadow:inset 0 2px 4px rgba(0,0,0,.5);}
+  [data-theme="iphone1"] button.primary{font-weight:700;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 6px rgba(59,111,214,.6);}
+  [data-theme="iphone1"] input,[data-theme="iphone1"] select{background:#1a2740;color:#fff;border:1px solid #2b3a54;border-radius:8px;box-shadow:inset 0 1px 3px rgba(0,0,0,.6);}
+  [data-theme="iphone1"] .tab.active{background:linear-gradient(180deg,#8bb0f2,#3b6fd6);color:#fff;}
+  [data-theme="iphone1"] tbody tr.sel td{background:var(--sel);color:#fff;}
+  [data-theme="iphone1"] tbody tr:hover td{background:var(--rowhover);}
+
+  /* ===== Android 1.0 — dark material chrome, green accents, orange highlight ===== */
+  [data-theme="android1"]{--bg:#1c1c1c;--panel:#262626;--panel2:#2e2e2e;--fg:#e6e6e6;--dim:#9a9a9a;--hi:#ffffff;--accent:#a4c639;--accent2:#c3e05a;--field:#333333;--field-fg:#e6e6e6;--up:#a4c639;--down:#ff5555;--warn:#ffaa00;--grid:#444444;--rowhover:#2a2a2a;--sel:#3a3a1e;
+    --ix-buy:#a4c639;--ix-sell:#ff5555;--ix-neutral:#9a9a9a;--ix-line:#a4c639;--ix-measure:#ffaa00;--ix-label-bg:#262626;--ix-label-fg:#e6e6e6;
+    --app-font:"Droid Sans","Roboto",sans-serif;
+    --accent-fg:#1c1c1c;--overlay-bg:rgba(0,0,0,.6);--shadow-color:rgba(0,0,0,.6);--on-down:#1c1c1c;}
+  [data-theme="android1"] header{background:linear-gradient(180deg,#2b2b2b,#1c1c1c);border-bottom:1px solid #000;box-shadow:inset 0 1px 0 rgba(255,255,255,.06);}
+  [data-theme="android1"] .brand{color:#a4c639;}
+  [data-theme="android1"] .cell,[data-theme="android1"] .chartwrap,[data-theme="android1"] .risk,[data-theme="android1"] .slider,[data-theme="android1"] .dtwrap,[data-theme="android1"] .reflinks.card,[data-theme="android1"] #sidebar,[data-theme="android1"] aside#help{background:#262626;border:1px solid #3a3a3a;border-radius:3px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 1px 2px rgba(0,0,0,.5);}
+  [data-theme="android1"] .cell{border-left:2px solid #a4c639;}
+  [data-theme="android1"] .risk .rt,[data-theme="android1"] .chartwrap .chtools{background:linear-gradient(180deg,#2e2e2e,#222222);color:#a4c639;border-bottom:1px solid #000;}
+  [data-theme="android1"] button,[data-theme="android1"] .tab{background:linear-gradient(180deg,#3a3a3a,#262626);color:#e6e6e6;border:1px solid #4a4a4a;border-radius:3px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06);}
+  [data-theme="android1"] button:hover{border-color:#a4c639;color:#fff;}
+  [data-theme="android1"] button:active{background:linear-gradient(180deg,#ffaa00,#e08f00);color:#1c1c1c;border-color:#ffaa00;}
+  [data-theme="android1"] button.primary{background:linear-gradient(180deg,#b6d84a,#a4c639);color:#1c1c1c;border-color:#7d9a1f;font-weight:700;}
+  [data-theme="android1"] input,[data-theme="android1"] select{background:#333333;color:#e6e6e6;border:1px solid #4a4a4a;border-radius:3px;}
+  [data-theme="android1"] input:focus,[data-theme="android1"] select:focus{border-color:#ffaa00;outline:none;}
+  [data-theme="android1"] .tab.active{background:linear-gradient(180deg,#ffaa00,#e08f00);color:#1c1c1c;border-color:#ffaa00;}
+  [data-theme="android1"] tbody tr.sel td{background:#ffaa00;color:#1c1c1c;}
+  [data-theme="android1"] tbody tr:hover td{background:var(--rowhover);}
   *{box-sizing:border-box;}
   html,body{margin:0;height:100%;}
   :root{--app-font:"SF Mono","Menlo","Consolas",monospace;--app-size:13px;--app-weight:400;}
@@ -139,6 +334,60 @@
   .slider input[type=range]{width:100%;accent-color:var(--accent);margin-top:8px;}
   .scenbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
   .ts{font-size:11px;color:var(--dim);}
+  /* verdict polarity: BUY/ENTER/LONG green, AVOID/SELL/SHORT red, WATCH/WAIT/NEUTRAL/HOLD amber */
+  .v-buy{color:var(--up);}.v-avoid{color:var(--down);}.v-watch{color:var(--warn);}
+  /* FINDR — bulk screener (grafted; themed via swingr CSS variables) */
+  .findr{display:flex;flex-direction:column;gap:12px;}
+  .findr-intro{font-size:0.9em;line-height:1.4;max-width:70ch;}
+  .findr-ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .findr-ctl label{font-size:0.72em;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);}
+  .findr-ctl select{min-width:64px;}
+  .findr-note{font-size:0.8em;max-width:70ch;}
+  .findr-prog{display:flex;flex-direction:column;gap:6px;}
+  .findr-bar{height:8px;border-radius:4px;background:var(--field);border:1px solid var(--grid);overflow:hidden;}
+  .findr-fill{height:100%;background:var(--accent);width:0;transition:width .3s ease;}
+  .findr-progtxt{font-size:0.82em;font-variant-numeric:tabular-nums;}
+  .findr-log{max-height:200px;overflow-y:auto;border:1px solid var(--grid);background:var(--panel2);padding:4px 8px;font-family:var(--app-font);font-size:0.78em;line-height:1.55;font-variant-numeric:tabular-nums;}
+  .findr-log:empty{display:none;}
+  .findr-logline{white-space:nowrap;}
+  .findr-log-buy{color:var(--up);font-weight:600;}
+  .findr-log-skip{color:var(--dim);}
+  .findr-log-def{color:var(--fg);opacity:.82;}
+  .findr-run.findr-stop{background:var(--down);border-color:var(--down);color:#000;}
+  .findr-run.findr-stop:hover{background:var(--down);border-color:var(--down);color:#000;filter:brightness(1.12);}
+  @keyframes findrspin{to{transform:rotate(360deg);}}
+  .tab .findr-spin{display:inline-flex;align-items:center;justify-content:center;color:var(--accent);}
+  .tab .findr-spin svg{width:12px;height:12px;animation:findrspin .8s linear infinite;}
+  .tab.findr-pill{color:var(--accent);padding:0 12px;background:transparent;border:1px solid color-mix(in srgb,var(--accent) 55%,transparent);font-weight:700;letter-spacing:1.5px;font-size:10px;flex:0 0 auto;}
+  .tab.findr-pill:hover{background:var(--accent);color:#000;}
+  .findr-tablewrap{max-height:60vh;overflow:auto;}
+  .findr-table thead th.findr-th{cursor:pointer;white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .findr-table thead th.findr-th:hover{color:var(--fg);}
+  .findr-table thead th.findr-th.active{color:var(--accent);}
+  .findr-table tbody tr[data-sym]{cursor:pointer;}
+  .findr-table tbody tr[data-sym]:hover{background:var(--rowhover);box-shadow:inset 2px 0 0 var(--accent);}
+  .findr-table td.val{color:var(--hi);font-weight:700;}
+  .findr-found{font-size:0.82em;}
+  /* Conviction data panels (fundamentals + news), grafted; themed via swingr CSS variables */
+  .conviction{margin-top:16px;border:1px solid var(--grid);border-left:2px solid var(--accent);background:var(--panel);padding:11px 13px;}
+  .conviction .ct{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);margin-bottom:8px;}
+  .conviction label{display:flex;gap:8px;align-items:flex-start;color:var(--fg);padding:4px 0;cursor:pointer;font-size:0.92em;text-transform:none;letter-spacing:0;}
+  .conviction label input{width:auto;margin-top:2px;}
+  .conviction .man-note{color:var(--dim);font-size:0.8em;font-style:italic;margin-top:6px;}
+  .conviction .cv-panel{margin:2px 0 4px 24px;font-size:0.86em;color:var(--dim);}
+  .conviction .cv-loading{color:var(--dim);font-style:italic;}
+  .conviction .cv-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 12px;margin:2px 0 4px;}
+  .conviction .cv-grid .cvk{color:var(--dim);font-size:0.82em;}
+  .conviction .cv-grid .cvv{color:var(--hi);font-family:var(--app-font);}
+  .conviction .cv-read{color:var(--fg);line-height:1.4;margin-top:4px;}
+  .conviction .cv-newshead{color:var(--dim);font-size:0.82em;margin:2px 0 4px;}
+  .conviction .cv-news{padding:2px 0;line-height:1.4;}
+  .conviction .cv-news .cvd{color:var(--dim);font-family:var(--app-font);font-size:0.82em;}
+  .conviction .cv-news .cvsrc{color:var(--dim);}
+  .conviction .cv-link{color:var(--accent);cursor:pointer;text-decoration:none;}
+  .conviction .cv-link:hover{text-decoration:underline;}
+  .conviction .cv-err{color:var(--dim);font-style:italic;}
+  @media (max-width:520px){.conviction .cv-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
   /* context menu */
   #ctx{position:fixed;z-index:60;background:var(--panel);border:1px solid var(--accent);border-radius:3px;padding:8px;display:none;box-shadow:0 6px 20px rgba(0,0,0,.6);}
   #ctx .swatches{display:grid;grid-template-columns:repeat(6,20px);gap:5px;margin-bottom:8px;}
@@ -231,7 +480,7 @@
 </head>
 <body data-theme="amber">
   <header>
-    <span class="brand"><svg viewBox="0 0 32 32"><rect x="2.5" y="2.5" width="27" height="27" rx="7"/><text x="16" y="13.5" text-anchor="middle" font-family="Menlo,Consolas,monospace" font-weight="700" font-size="11" letter-spacing="-.5" fill="currentColor" stroke="none">SS</text><line x1="9" y1="22" x2="9" y2="27"/><rect x="7.6" y="22.5" width="2.8" height="4" rx=".8"/><line x1="16" y1="18" x2="16" y2="27"/><rect x="14.6" y="20" width="2.8" height="5.5" rx=".8"/><line x1="23" y1="15" x2="23" y2="26"/><rect x="21.6" y="16.5" width="2.8" height="7" rx=".8"/></svg>STOCKSCANNER</span>
+    <span class="brand"><svg viewBox="0 0 32 32"><rect x="2.5" y="2.5" width="27" height="27" rx="7"/><text x="16" y="13.5" text-anchor="middle" font-family="Menlo,Consolas,monospace" font-weight="700" font-size="11" letter-spacing="-.5" fill="currentColor" stroke="none">SR</text><line x1="9" y1="22" x2="9" y2="27"/><rect x="7.6" y="22.5" width="2.8" height="4" rx=".8"/><line x1="16" y1="18" x2="16" y2="27"/><rect x="14.6" y="20" width="2.8" height="5.5" rx=".8"/><line x1="23" y1="15" x2="23" y2="26"/><rect x="21.6" y="16.5" width="2.8" height="7" rx=".8"/></svg>SWINGR</span>
     <!-- search-mode controls (hidden from the bar; the tab loader drives new scans) -->
     <span id="searchControls" style="display:none"><label>Ticker</label><input id="ticker" value="BSX" />
       <select id="tf"><option>weekly</option><option>daily</option></select>
@@ -247,7 +496,7 @@
       <button id="exportCaret" class="icon caret" data-i="caret" title="Choose export location"></button>
     </span>
     <button id="profileBtn" class="icon" data-i="user" data-label="Profile" title="Profile & options"></button>
-    <select id="theme" style="display:none"><option value="amber">Amber (Bloomberg)</option><option value="c64">Commodore 64</option><option value="green">Green phosphor</option><option value="dark">Dark modern</option><option value="light">Light</option></select>
+    <select id="theme" style="display:none"><option value="amber">Amber (Bloomberg)</option><option value="green">Green phosphor</option><option value="dark">Dark modern</option><option value="light">Light</option><option value="c64">Commodore 64</option><option value="apple2">Apple ][</option><option value="system6">Mac System 6</option><option value="winnt">Windows NT 4</option><option value="win311">Windows 3.11</option><option value="amiga">Amiga Workbench</option><option value="next">NeXTSTEP</option><option value="dos">DOS / ANSI BBS</option><option value="vista">Windows Vista (Aero)</option><option value="aqua">Mac OS X Aqua</option><option value="iphone1">iPhone OS 1</option><option value="android1">Android 1.0</option></select>
   </header>
   <div id="exportMenu" class="menu">
     <div class="mi" data-loc="downloads">Downloads</div>
@@ -277,7 +526,7 @@
 
 <div id="aboutOverlay">
   <div id="aboutBox">
-    <div class="ab-brand"><svg viewBox="0 0 32 32"><rect x="2.5" y="2.5" width="27" height="27" rx="7"/><text x="16" y="13.5" text-anchor="middle" font-family="Menlo,Consolas,monospace" font-weight="700" font-size="11" letter-spacing="-.5" fill="currentColor" stroke="none">SS</text><line x1="9" y1="22" x2="9" y2="27"/><rect x="7.6" y="22.5" width="2.8" height="4" rx=".8"/><line x1="16" y1="18" x2="16" y2="27"/><rect x="14.6" y="20" width="2.8" height="5.5" rx=".8"/><line x1="23" y1="15" x2="23" y2="26"/><rect x="21.6" y="16.5" width="2.8" height="7" rx=".8"/></svg><span>STOCKSCANNER</span></div>
+    <div class="ab-brand"><svg viewBox="0 0 32 32"><rect x="2.5" y="2.5" width="27" height="27" rx="7"/><text x="16" y="13.5" text-anchor="middle" font-family="Menlo,Consolas,monospace" font-weight="700" font-size="11" letter-spacing="-.5" fill="currentColor" stroke="none">SR</text><line x1="9" y1="22" x2="9" y2="27"/><rect x="7.6" y="22.5" width="2.8" height="4" rx=".8"/><line x1="16" y1="18" x2="16" y2="27"/><rect x="14.6" y="20" width="2.8" height="5.5" rx=".8"/><line x1="23" y1="15" x2="23" y2="26"/><rect x="21.6" y="16.5" width="2.8" height="7" rx=".8"/></svg><span>SWINGR</span></div>
     <div class="ab-sub">EMA swing / position system — 9 / 20 / 200</div>
     <div class="ab-tag">
       Built by <b>MAKO</b><br/>
@@ -299,7 +548,7 @@
     <div class="pf-row"><label>Font size</label><span style="flex:1;display:flex;align-items:center;gap:10px;max-width:260px"><input type="range" id="pfSize" min="10" max="22" step="0.5" style="flex:1;accent-color:var(--accent)"/><span id="pfSizeV" style="color:var(--hi);min-width:44px;text-align:right">13.5px</span></span></div>
     <div class="pf-row"><label>Weight</label><select id="pfWeight"><option value="300">Thin</option><option value="400">Regular</option><option value="700">Bold</option></select></div>
     <div class="pf-row"><label>Columns</label><select id="pfCols"><option value="normal">Normal</option><option value="col80">PET 80-column</option><option value="col120">PET 120-column</option></select></div>
-    <div class="pf-preview" id="pfPreview">STOCKSCANNER  BSX  51.83  +37.8%</div>
+    <div class="pf-preview" id="pfPreview">SWINGR  BSX  51.83  +37.8%</div>
     <div class="pf-note dim">PET fonts render authentically if you have a C64/PET font installed (PetMe64 or C64 Pro Mono — free from kreativekorp.com); otherwise a clean monospace is used.</div>
     <div class="pf-btns"><button id="pfSave" class="primary">Save as default</button><button id="pfReset">Reset</button><button id="pfClose">Close</button></div>
   </div>
@@ -326,7 +575,7 @@
   // Single call path: throws a clear, catchable error when running outside the app.
   async function invoke(cmd,args){
     const fn=getInvoke();
-    if(!fn)throw new Error("Not running inside the StockScanner app (no Tauri bridge).");
+    if(!fn)throw new Error("Not running inside the SwingR app (no Tauri bridge).");
     return fn(cmd,args);
   }
   const $=(id)=>document.getElementById(id);
@@ -334,6 +583,15 @@
   const fmtMoney=(x)=>"$"+Number(x).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
   const cls=(v)=>v>=0?"up":"down";
   const now=()=>new Date().toLocaleString();
+  const fmtPct=(x)=>(x==null||isNaN(Number(x)))?"—":(Number(x)>=0?"+":"")+Number(x).toFixed(1)+"%";
+  // Map a verdict's FIRST word to a polarity CSS class (see .v-buy/.v-avoid/.v-watch).
+  // BUY/STRONG BUY/ENTER/LONG -> green; AVOID/SELL/SHORT -> red; WATCH/WAIT/NEUTRAL/HOLD -> amber (default).
+  function verdictClass(v){
+    const w=String(v||"").trim().toUpperCase().replace(/^STRONG\s+/,"").split(/[^A-Z]+/)[0]||"";
+    if(w==="BUY"||w==="ENTER"||w==="LONG")return "v-buy";
+    if(w==="AVOID"||w==="SELL"||w==="SHORT")return "v-avoid";
+    return "v-watch";
+  }
   // Commodore 64 16-color palette (Pepto), organized: reds/oranges, greens, blues, greys
   const PALETTE=["#68372B","#9A6759","#6F4F25","#B8C76F","#588D43","#9AD284","#70A4B2","#6C5EB5","#352879","#6F3D86","#FFFFFF","#959595","#6C6C6C","#444444","#B8C76F","#68372B"];
   const C64={black:"#000000",white:"#FFFFFF",red:"#68372B",cyan:"#70A4B2",purple:"#6F3D86",green:"#588D43",blue:"#352879",yellow:"#B8C76F",orange:"#6F4F25",brown:"#433900",ltred:"#9A6759",dkgrey:"#444444",grey:"#6C6C6C",ltgreen:"#9AD284",ltblue:"#6C5EB5",ltgrey:"#959595"};
@@ -419,7 +677,7 @@
   }
 
   function newTab(kind="scan"){const id="t"+(++seq);
-    const t={id,kind,title:kind==="scenario"?"Scenario":"New",color:PALETTE[(seq-1)%12],data:null,plain:"",ts:null,
+    const t={id,kind,title:kind==="scenario"?"Scenario":kind==="findr"?"FINDR":"New",color:PALETTE[(seq-1)%12],data:null,plain:"",ts:null,
       scen:{...SCEN_DEFAULTS},locks:{},notes:"",ticker:"",objective:"",
       onboard:kind==="scenario"};   // scenario tabs open on the onboarding step first
     tabs.push(t);active=id;mode="tabs";renderTabs();renderView();persist();return t;}
@@ -431,14 +689,16 @@
     const bar=$("tabbar");bar.innerHTML="";
     tabs.forEach(t=>{const el=document.createElement("div");el.className="tab"+(t.id===active&&mode==="tabs"?" active":"");
       el.style.setProperty("--tabc",t.color);
-      const canRescan=!!t.data||(t.kind==="scenario"&&!t.onboard);
-      el.innerHTML=`<span class="glyph"></span><span>${escapeHtml(t.title)}</span>`
+      const canRescan=(!!t.data||(t.kind==="scenario"&&!t.onboard))&&t.kind!=="findr";
+      const spin=(t.kind==="findr"&&t.running)?`<span class="findr-spin" title="Scanning…">${ic("reset")}</span>`:"";
+      el.innerHTML=`<span class="glyph"></span>`+spin+`<span>${escapeHtml(t.title)}</span>`
         +(canRescan?`<span class="r" title="Rescan this tab">${ic("reset")}</span>`:"")
         +`<span class="x" title="Close">${ic("close")}</span>`;
       // clicking a tab always returns to tab view — the views are mutually exclusive
       el.onclick=(e)=>{if(e.target.closest(".x")){closeTab(t.id);}else if(e.target.closest(".r")){rescanTab(t);}else{active=t.id;setMode("tabs");}};
       el.oncontextmenu=(e)=>{e.preventDefault();openCtx(e.clientX,e.clientY,t);};bar.appendChild(el);});
     const add=document.createElement("div");add.className="tab addtab";add.innerHTML=ic("add");add.title="New tab";add.onclick=()=>newTab("scan");bar.appendChild(add);
+    const findrPill=document.createElement("div");findrPill.className="tab findr-pill";findrPill.textContent="FINDR";findrPill.title="Bulk swing screener — scan a letter range for BUY setups";findrPill.onclick=()=>newTab("findr");bar.appendChild(findrPill);
     if(tabLayout==="side")renderSidebar();   // keep the sidebar in step with tab state
   }
 
@@ -509,9 +769,10 @@
     if(!t){el.innerHTML="";return;}
     if(t.kind==="scenario"&&t.onboard){el.innerHTML=onboardHTML(t);wireOnboard(t);return;}
     if(t.kind==="scenario"){el.innerHTML=scenarioHTML(t)+notesHTML(t);wireScenario(t);recalcScenario(t,false);wireNotes(t);return;}
+    if(t.kind==="findr"){el.innerHTML=findrHTML(t);wireFindr(el,t);return;}
     if(!t.data){el.innerHTML=emptyCanvasHTML(t)+notesHTML(t);wireEmptyCanvas(t);wireNotes(t);return;}
     const refs=refLinksHTML(t.ticker);
-    if(t.kind==="scan")el.innerHTML=scanHTML(t.data)+tsLine(t)+refs+notesHTML(t);
+    if(t.kind==="scan"){el.innerHTML=scanHTML(t.data)+convictionHTML(t.data)+tsLine(t)+refs+notesHTML(t);wireConviction(el,t.data);wireRefLinks(el);wireNotes(t);return;}
     else el.innerHTML=backtestHTML(t.data)+tsLine(t)+refs+notesHTML(t);
     wireRefLinks(el);wireNotes(t);
   }
@@ -529,6 +790,7 @@
   // Tabs are grouped by ticker, like Warp groups by workspace. Search filters live.
   function groupOf(t){
     if(t.kind==="scenario")return "SCENARIOS";
+    if(t.kind==="findr")return "FINDR";
     if(t.kind==="backtest")return "BACKTESTS";
     if(t.data)return "SCANS";
     return "NEW";
@@ -609,7 +871,7 @@
     const tbl=`<div class="dtwrap"><table><thead><tr><th>Entry</th><th>Exit</th><th>Outcome</th><th class="num">R</th></tr></thead><tbody>${log.map(x=>`<tr><td>${x.entry_date}</td><td>${x.exit_date}</td><td class="${x.outcome==='WIN'?'up':x.outcome==='LOSS'?'down':'dim'}">${x.outcome}</td><td class="num ${cls(x.r)}">${x.r>=0?"+":""}${x.r}R</td></tr>`).join("")||`<tr><td colspan=4 class="dim">No trades in sample.</td></tr>`}</tbody></table></div>`;
     return kpiGrid(kp)+`<pre class="dim" style="margin:12px 0">${escapeHtml(r.note)}</pre>`+tbl;
   }
-  const plainScan=(a)=>[`STOCKSCANNER — ${a.ticker} [${a.timeframe}]`,`Run: ${now()}`,`Verdict:      ${a.verdict}`,`Regime:       ${a.regime}`,`Price:        ${a.price}`,`EMA9/20/200:  ${a.ema9} / ${a.ema20} / ${a.ema200}`,`RSI/ATR:      ${a.rsi} / ${a.atr}`,`Setup quality:${a.setup_quality}`,`Entry:        ${a.entry}`,`Take-profit:  ${a.take_profit} (${a.upside_pct}%)`,`Stop-loss:    ${a.stop_loss} (${a.downside_pct}%)`,`R-multiple:   ${a.r_multiple}`,`Rejection:    ${a.rejection_zones.join(", ")}`,`Support:      ${a.support.join(", ")}`,``,`Why:`,...a.reasons.map(r=>"  - "+r),``,`Not a prediction, not advice. Swing/position horizon.`].join("\n");
+  const plainScan=(a)=>[`SWINGR — ${a.ticker} [${a.timeframe}]`,`Run: ${now()}`,`Verdict:      ${a.verdict}`,`Regime:       ${a.regime}`,`Price:        ${a.price}`,`EMA9/20/200:  ${a.ema9} / ${a.ema20} / ${a.ema200}`,`RSI/ATR:      ${a.rsi} / ${a.atr}`,`Setup quality:${a.setup_quality}`,`Entry:        ${a.entry}`,`Take-profit:  ${a.take_profit} (${a.upside_pct}%)`,`Stop-loss:    ${a.stop_loss} (${a.downside_pct}%)`,`R-multiple:   ${a.r_multiple}`,`Rejection:    ${a.rejection_zones.join(", ")}`,`Support:      ${a.support.join(", ")}`,``,`Why:`,...a.reasons.map(r=>"  - "+r),``,`Not a prediction, not advice. Swing/position horizon.`].join("\n");
 
   // ---- scenario ----
   const SLIDERS=[["entry","Entry price",1,500,0.5],["target","Target price",1,800,0.5],["stop","Stop price",1,500,0.5],["capital","Capital",1000,250000,1000],["winprob","Prob hit target",1,99,1],["n","Simulations",1000,50000,1000]];
@@ -647,7 +909,7 @@
     if($("scenout"))$("scenout").textContent=`Entry ${s.entry}  Target ${s.target}  Stop ${s.stop}  |  win-prob ${s.winprob}%  |  ${s.n} sims`+(locks.length?`  |  LOCKED: ${locks.join(", ")}`:"")+`\nRisk/share ${risk0.toFixed(2)}   Reward/share ${reward0.toFixed(2)}   R ${isFinite(rmult)?rmult.toFixed(2):"n/a"}\nWorst 1% ${fmtMoney(pct(0.01))}   Best 1% ${fmtMoney(pct(0.99))}\n\nUnlocked inputs are perturbed around their value each run; locked ones held constant.\nExpected value follows YOUR inputs — a what-if distribution, not a prediction.`;
     if(stamp){t.ts=now();if($("scents"))$("scents").textContent="Last run: "+t.ts;}
     if(t.title==="New"||t.title==="(empty)")t.title="Scenario";
-    t.plain=[`STOCKSCANNER — SCENARIO`,`Run: ${t.ts||now()}`,`Entry ${s.entry}  Target ${s.target}  Stop ${s.stop}`,`Capital ${s.capital}  Win-prob ${s.winprob}%  Sims ${s.n}`,locks.length?`Locked: ${locks.join(", ")}`:`Locked: none`,`Shares ${shares}`,`R-multiple ${isFinite(rmult)?rmult.toFixed(2):"n/a"}`,`Expected R ${evR.toFixed(2)}`,`Expected P&L ${mean.toFixed(2)}`,`Prob of loss ${probLoss.toFixed(0)}%`,`P10/P90 ${pct(0.10).toFixed(2)}/${pct(0.90).toFixed(2)}`,`Worst 1% ${pct(0.01).toFixed(2)}  Best 1% ${pct(0.99).toFixed(2)}`,``,`What-if, not a prediction.`].join("\n");
+    t.plain=[`SWINGR — SCENARIO`,`Run: ${t.ts||now()}`,`Entry ${s.entry}  Target ${s.target}  Stop ${s.stop}`,`Capital ${s.capital}  Win-prob ${s.winprob}%  Sims ${s.n}`,locks.length?`Locked: ${locks.join(", ")}`:`Locked: none`,`Shares ${shares}`,`R-multiple ${isFinite(rmult)?rmult.toFixed(2):"n/a"}`,`Expected R ${evR.toFixed(2)}`,`Expected P&L ${mean.toFixed(2)}`,`Prob of loss ${probLoss.toFixed(0)}%`,`P10/P90 ${pct(0.10).toFixed(2)}/${pct(0.90).toFixed(2)}`,`Worst 1% ${pct(0.01).toFixed(2)}  Best 1% ${pct(0.99).toFixed(2)}`,``,`What-if, not a prediction.`].join("\n");
     persist();
   }
 
@@ -810,16 +1072,331 @@ you were testing before you see the numbers.</pre></div>`;
   async function backtestInto(t,sym){
     const r=JSON.parse(await invoke("backtest",{ticker:sym,timeframe:$("tf").value}))[0];
     t.kind="backtest";t.title=`${sym} backtest`;t.ticker=sym;t.ts=now();const pf=(r.profit_factor==null)?"∞ (no losers)":r.profit_factor;
-    t.plain=[`STOCKSCANNER — BACKTEST ${r.ticker} [${r.timeframe}]`,`Run: ${t.ts}`,`Trades ${r.trades}  Wins ${r.wins}  Losses ${r.losses}  Timeouts ${r.timeouts}`,`Win-rate ${r.win_rate}%   Avg R ${r.avg_r}   Expectancy ${r.expectancy}`,`Profit factor ${pf}   Total ${r.total_r} R`,``,r.note,``,...(r.trade_log||[]).slice(-14).map(x=>`${x.entry_date} -> ${x.exit_date}  ${x.outcome}  ${x.r>=0?"+":""}${x.r}R`)].join("\n");
+    t.plain=[`SWINGR — BACKTEST ${r.ticker} [${r.timeframe}]`,`Run: ${t.ts}`,`Trades ${r.trades}  Wins ${r.wins}  Losses ${r.losses}  Timeouts ${r.timeouts}`,`Win-rate ${r.win_rate}%   Avg R ${r.avg_r}   Expectancy ${r.expectancy}`,`Profit factor ${pf}   Total ${r.total_r} R`,``,r.note,``,...(r.trade_log||[]).slice(-14).map(x=>`${x.entry_date} -> ${x.exit_date}  ${x.outcome}  ${x.r>=0?"+":""}${x.r}R`)].join("\n");
     t.data=r;addHistory({ticker:sym,kind:"backtest",title:t.title,plain:t.plain});
     const e=logRun(sym,{kind:"backtest",title:t.title,plain:t.plain,timeframe:$("tf").value});
     t.logId=e.id;
     renderTabs();renderView();persist();
   }
+
+  // ---- Conviction data panels (fundamentals + news) -------------------------
+  // Grafted from the FINDR lineage. Auto-fetches fundamentals + news via the
+  // backend `fundamentals`/`news` commands; the checkboxes stay manual (you tick
+  // them to confirm you actually reviewed the data).
+  const CONV_CACHE={fund:{},news:{}};   // session cache so re-renders don't refetch
+  function convictionHTML(a){
+    const tk=(a.ticker||"").toUpperCase();
+    let saved={fundamentals:false,catalyst:false};
+    try{const raw=localStorage.getItem("ss_conviction_"+tk);if(raw)saved=Object.assign(saved,JSON.parse(raw));}catch(e){}
+    // read-only technical-stage flag: 9/20 reclaimed (heuristic from live scan fields)
+    const triggerMet=(a.ema9!=null&&a.ema20!=null&&Number(a.ema9)>=Number(a.ema20));
+    return `<div class="conviction"><div class="ct">Conviction checklist (you fill these in)</div>
+      <label><input type="checkbox" class="cv-fund"${saved.fundamentals?" checked":""}> Fundamentals reviewed (P/E, forward P/E, valuation)</label>
+      <div class="cv-panel fund-panel"><div class="cv-loading">Loading fundamentals…</div></div>
+      <label><input type="checkbox" class="cv-cat"${saved.catalyst?" checked":""}> Company catalyst — what it's physically doing (news / articles)</label>
+      <div class="cv-panel news-panel"><div class="cv-loading">Loading news…</div></div>
+      <label><input type="checkbox" class="cv-tech" disabled${triggerMet?" checked":""}> Technical stage — 9/20 reclaim ${triggerMet?"MET":"not yet"} (auto, read-only)</label>
+      <div class="man-note">Data is fetched to help you decide — you still tick each box to confirm you reviewed it.</div></div>`;
+  }
+  function wireConviction(el,a){
+    const box=el.querySelector(".conviction"); if(!box||!a)return;
+    const tk=(a.ticker||"").toUpperCase();
+    const save=()=>{try{localStorage.setItem("ss_conviction_"+tk,JSON.stringify({
+      fundamentals:!!(box.querySelector(".cv-fund")&&box.querySelector(".cv-fund").checked),
+      catalyst:!!(box.querySelector(".cv-cat")&&box.querySelector(".cv-cat").checked)}));}catch(e){}};
+    const f=box.querySelector(".cv-fund"); if(f)f.addEventListener("change",save);
+    const c=box.querySelector(".cv-cat"); if(c)c.addEventListener("change",save);
+    const fundPanel=box.querySelector(".fund-panel"), newsPanel=box.querySelector(".news-panel");
+    if(!fundPanel||!newsPanel)return;
+    if(!hasBridge()){
+      fundPanel.innerHTML=`<div class="cv-err">Needs the app</div>`;
+      newsPanel.innerHTML=`<div class="cv-err">Needs the app</div>`;
+      return;
+    }
+    const fmtCap=(v)=>{if(v==null)return null;const n=Number(v);if(!isFinite(n))return null;
+      if(n>=1e12)return "$"+(n/1e12).toFixed(2)+"T";
+      if(n>=1e9)return "$"+(n/1e9).toFixed(1)+"B";
+      if(n>=1e6)return "$"+Math.round(n/1e6)+"M";
+      return "$"+Math.round(n).toLocaleString();};
+    const fmtDate=(u)=>{const d=new Date(Number(u)*1000);return isNaN(d.getTime())?"":d.toISOString().slice(0,10);};
+    const cell=(k,v)=>v==null?"":`<div class="cvk">${escapeHtml(k)}</div><div class="cvv">${escapeHtml(v)}</div>`;
+    // Fundamentals
+    (async()=>{
+      try{
+        let d=CONV_CACHE.fund[tk];
+        if(!d){ d=JSON.parse(await invoke("fundamentals",{ticker:tk})); CONV_CACHE.fund[tk]=d; }
+        if(d&&d.ok){
+          const one=(x)=>x==null?null:Number(x).toFixed(1);
+          const two=(x)=>x==null?null:"$"+Number(x).toFixed(2);
+          const wk=(d.fiftyTwoWeekLow!=null&&d.fiftyTwoWeekHigh!=null)
+            ? "$"+Number(d.fiftyTwoWeekLow).toFixed(2)+" – $"+Number(d.fiftyTwoWeekHigh).toFixed(2) : null;
+          const cells=[cell("P/E",one(d.trailingPE)),cell("Fwd P/E",one(d.forwardPE)),
+            cell("Mkt cap",fmtCap(d.marketCap)),cell("P/B",one(d.priceToBook)),
+            cell("EPS ttm",two(d.epsTtm)),cell("52-wk",wk)].filter(Boolean).join("");
+          const read=d.read?`<div class="cv-read">${escapeHtml(d.read)}</div>`:"";
+          fundPanel.innerHTML=(cells?`<div class="cv-grid">${cells}</div>`:"")+read
+            || `<div class="cv-err">No fundamentals returned — review manually.</div>`;
+        } else {
+          fundPanel.innerHTML=`<div class="cv-err">Fundamentals unavailable (${escapeHtml((d&&d.error)||"unknown")}) — review manually.</div>`;
+        }
+      }catch(e){
+        fundPanel.innerHTML=`<div class="cv-err">Fundamentals unavailable (${escapeHtml(String(e&&e.message||e))}) — review manually.</div>`;
+      }
+    })();
+    // News
+    (async()=>{
+      try{
+        let d=CONV_CACHE.news[tk];
+        if(!d){ d=JSON.parse(await invoke("news",{ticker:tk})); CONV_CACHE.news[tk]=d; }
+        if(d&&d.ok){
+          const items=Array.isArray(d.items)?d.items.slice(0,6):[];
+          if(!items.length){ newsPanel.innerHTML=`<div class="cv-err">No recent news found.</div>`; return; }
+          const head=(d.sector||d.industry)
+            ? `<div class="cv-newshead">${escapeHtml([d.sector,d.industry].filter(Boolean).join(" · "))}</div>` : "";
+          newsPanel.innerHTML=head+items.map(it=>{
+            const dt=it.unixTime!=null?fmtDate(it.unixTime):"";
+            const src=it.publisher?`<span class="cvsrc">${escapeHtml(it.publisher)}</span> · `:"";
+            const pre=dt?`<span class="cvd">${escapeHtml(dt)}</span> · `:"";
+            return `<div class="cv-news">${pre}${src}<a class="cv-link">${escapeHtml(it.title||"(untitled)")}</a></div>`;
+          }).join("");
+          const links=newsPanel.querySelectorAll(".cv-link");
+          items.forEach((it,i)=>{ const el2=links[i]; if(!el2)return;
+            el2.addEventListener("click",async()=>{ try{ await invoke("open_url",{url:it.link}); }catch(e){ status("Could not open browser: "+escapeHtml(String(e))); } }); });
+        } else {
+          newsPanel.innerHTML=`<div class="cv-err">News unavailable (${escapeHtml((d&&d.error)||"unknown")}) — check manually.</div>`;
+        }
+      }catch(e){
+        newsPanel.innerHTML=`<div class="cv-err">News unavailable (${escapeHtml(String(e&&e.message||e))}) — check manually.</div>`;
+      }
+    })();
+  }
+
+  // ---- FINDR: bulk letter-range screener ------------------------------------
+  const findrUnlisten={};   // tabId -> array of unlisten promises (kept off the tab so it never persists)
+  const findrBus=()=>(window.__TAURI__&&window.__TAURI__.event)||null;
+  function findrLetterOpts(sel){let s="";for(let i=65;i<=90;i++){const c=String.fromCharCode(i);s+=`<option${c===sel?" selected":""}>${c}</option>`;}return s;}
+  // Columns: text sort case-insensitive; numeric sort with null/NaN ALWAYS last (both directions).
+  const FINDR_NUMERIC={r_multiple:1,upside_pct:1,price:1};
+  const FINDR_COLS=[["symbol","Symbol"],["name","Name"],["verdict","Verdict"],["r_multiple","R"],["upside_pct","Profit %"],["price","Price"]];
+  const findrSortDefault=()=>({key:"upside_pct",dir:"desc"});   // DEFAULT: highest profit at top
+  function findrComparator(sort){
+    const key=(sort&&sort.key)||"upside_pct", dir=(sort&&sort.dir)||"desc", mul=dir==="asc"?1:-1;
+    if(FINDR_NUMERIC[key]){
+      return (a,b)=>{
+        let x=a[key],y=b[key];
+        x=(x==null||isNaN(Number(x)))?null:Number(x);
+        y=(y==null||isNaN(Number(y)))?null:Number(y);
+        if(x==null&&y==null)return 0;
+        if(x==null)return 1;   // null/NaN always last, regardless of dir
+        if(y==null)return -1;
+        return (x-y)*mul;
+      };
+    }
+    return (a,b)=>{
+      const x=String(a[key]==null?"":a[key]).toLowerCase(), y=String(b[key]==null?"":b[key]).toLowerCase();
+      return x<y?-1*mul:x>y?1*mul:0;
+    };
+  }
+  function findrRowHTML(h){
+    const r=(h.r_multiple==null)?"—":Number(h.r_multiple).toFixed(2);
+    const up=(h.upside_pct==null)?"—":fmtPct(h.upside_pct);
+    const px=(h.price==null)?"—":fmtMoney(h.price);
+    return `<tr class="findr-row" data-sym="${escapeHtml(h.symbol)}">`
+      +`<td class="val">${escapeHtml(h.symbol)}</td>`
+      +`<td>${escapeHtml(h.name||"")}</td>`
+      +`<td class="${verdictClass(h.verdict)}">${escapeHtml(h.verdict||"")}</td>`
+      +`<td class="num">${r}</td><td class="num">${up}</td><td class="num">${px}</td></tr>`;
+  }
+  function findrHeadHTML(t){
+    const sort=t.sort||findrSortDefault();
+    return "<tr>"+FINDR_COLS.map(([k,lab])=>{
+      const num=!!FINDR_NUMERIC[k], active=sort.key===k;
+      const arrow=active?(sort.dir==="asc"?" ▲":" ▼"):"";
+      return `<th class="findr-th${num?" num":""}${active?" active":""}" data-key="${k}">${escapeHtml(lab)}${arrow}</th>`;
+    }).join("")+"</tr>";
+  }
+  function findrPlain(t){
+    // Export always reflects profit-% descending (operator's ranking), independent of live UI sort.
+    const h=((t.data&&t.data.hits)||[]).slice().sort(findrComparator({key:"upside_pct",dir:"desc"}));
+    const head=`SWINGR — FINDR ${(t.findrStart||"A")}-${(t.findrEnd||"Z")} [${t.findrTf||"weekly"}]  found ${h.length}  (ranked by profit %)`;
+    return [head,""].concat(h.map(x=>`${x.symbol}  Profit ${x.upside_pct==null?"—":Number(x.upside_pct).toFixed(1)+"%"}  R ${x.r_multiple==null?"—":Number(x.r_multiple).toFixed(2)}  ${x.verdict||""}`)).join("\n");
+  }
+  function findrHTML(t){
+    t.sort=t.sort||findrSortDefault();
+    const d=t.data||{};
+    const hits=((d.hits)||[]).slice().sort(findrComparator(t.sort));
+    const start=t.findrStart||"A",end=t.findrEnd||"Z",tf=t.findrTf||"weekly";
+    const noBridge=!hasBridge()||!findrBus();
+    return `<div class="findr">
+      <div class="findr-intro dim">FINDR — bulk swing screener. Scans every US common-stock ticker in your letter range for locked-in BUY setups (below 200-week EMA + 9/20 reclaimed), ranked by profit % (gain to the 200-EMA take-profit).</div>
+      <div class="findr-ctl">
+        <label>Start</label><select class="findr-start">${findrLetterOpts(start)}</select>
+        <label>End</label><select class="findr-end">${findrLetterOpts(end)}</select>
+        <select class="findr-tf"><option value="weekly"${tf==="weekly"?" selected":""}>Weekly</option><option value="daily"${tf==="daily"?" selected":""}>Daily</option></select>
+        <label>Limit</label><input type="number" class="findr-limit" min="1" step="1" placeholder="all" style="width:74px" value="${t.findrLimit||""}" title="Max tickers to scan (blank = every ticker in the range)">
+        <button class="findr-run primary"${noBridge?" disabled":""}>Run FINDR</button>
+        <button class="findr-cancel" disabled>Cancel</button>
+        ${noBridge?`<span class="findr-nobridge dim">Needs the app</span>`:""}
+      </div>
+      <div class="findr-note dim">A-Z is ~13,000 tickers and can take 30-60 min (Yahoo rate-limits on big runs). One letter is a few minutes.</div>
+      <div class="findr-prog" style="display:none"><div class="findr-bar"><div class="findr-fill" style="width:0%"></div></div><div class="findr-progtxt dim"></div></div>
+      <div class="findr-log" aria-label="Live scan activity"></div>
+      <div class="dtwrap findr-tablewrap"><table class="findr-table"><thead class="findr-head">${findrHeadHTML(t)}</thead><tbody class="findr-results">${hits.map(findrRowHTML).join("")}</tbody></table></div>
+      <div class="findr-found dim">Found ${hits.length}</div>
+    </div>`;
+  }
+  function wireFindr(el,t){
+    t.sort=t.sort||findrSortDefault();
+    const runBtn=el.querySelector(".findr-run"),cancelBtn=el.querySelector(".findr-cancel");
+    const startSel=el.querySelector(".findr-start"),endSel=el.querySelector(".findr-end"),tfSel=el.querySelector(".findr-tf"),limitInput=el.querySelector(".findr-limit");
+    const prog=el.querySelector(".findr-prog"),fill=el.querySelector(".findr-fill"),progtxt=el.querySelector(".findr-progtxt");
+    const tbody=el.querySelector(".findr-results"),foundEl=el.querySelector(".findr-found"),thead=el.querySelector(".findr-head");
+    if(!runBtn)return;
+    const remember=()=>{t.findrStart=startSel.value;t.findrEnd=endSel.value;t.findrTf=tfSel.value;if(limitInput)t.findrLimit=limitInput.value;};
+    startSel.onchange=remember;endSel.onchange=remember;tfSel.onchange=remember;if(limitInput)limitInput.oninput=remember;
+
+    // Click-to-sort: same header toggles asc/desc; new header defaults numeric->desc, text->asc.
+    if(thead)thead.onclick=(e)=>{
+      const th=e.target.closest("th[data-key]");if(!th)return;
+      const k=th.dataset.key, cur=t.sort||findrSortDefault();
+      t.sort=(cur.key===k)?{key:k,dir:cur.dir==="asc"?"desc":"asc"}:{key:k,dir:FINDR_NUMERIC[k]?"desc":"asc"};
+      renderRows();if(typeof persist==="function")persist();
+    };
+
+    // open a hit as a full scan tab — mirrors doScan (newTab -> scanInto)
+    async function openHit(sym){
+      if(!sym)return;
+      if(!hasBridge()){status("Scanning needs the app.");return;}
+      const tf=t.findrTf||tfSel.value||"weekly";
+      const nt=newTab();nt.ticker=sym;$("ticker").value=sym;$("tf").value=tf;
+      status(`Scanning <b>${escapeHtml(sym)}</b>…`);
+      try{await scanInto(nt,sym);status("Done.");}
+      catch(err){status("Error.");$("view").innerHTML=`<pre class="down">${escapeHtml(String(err))}</pre>`;}
+    }
+    tbody.onclick=(e)=>{const tr=e.target.closest("tr[data-sym]");if(tr)openHit(tr.dataset.sym);};
+
+    // One-pass render: sort in-memory hits, build the full rows string, assign innerHTML ONCE.
+    function renderRows(){
+      const arr=(t.data&&t.data.hits)||[];
+      arr.sort(findrComparator(t.sort));
+      tbody.innerHTML=arr.map(findrRowHTML).join("");
+      foundEl.textContent="Found "+arr.length;
+      if(thead)thead.innerHTML=findrHeadHTML(t);   // refresh active-column arrow
+    }
+    // Coalesce rapid streaming hits into one render per frame; table always ends correct+sorted.
+    const raf=window.requestAnimationFrame?window.requestAnimationFrame.bind(window):(cb)=>setTimeout(cb,16);
+    let renderPending=false;
+    function scheduleRender(){if(renderPending)return;renderPending=true;raf(()=>{renderPending=false;renderRows();});}
+
+    // Live activity log (ephemeral, DOM-only — not persisted, not in t.data.hits).
+    const logBox=el.querySelector(".findr-log");
+    const LOG_CAP=500;
+    let logPending=[],logRafPending=false;
+    function logLineHTML(p){
+      const v=String(p.verdict||"");
+      const c=/^BUY/i.test(v)?"findr-log-buy":/^SKIP/i.test(v)?"findr-log-skip":"findr-log-def";
+      const r=(p.r_multiple==null)?"—":Number(p.r_multiple).toFixed(2);
+      const up=(p.upside_pct==null)?"—":fmtPct(p.upside_pct);
+      return `<div class="findr-logline ${c}">${escapeHtml(p.symbol||"")}  ·  ${escapeHtml(v)}  ·  R ${r}  ·  ${up}</div>`;
+    }
+    function flushLog(){
+      logRafPending=false;
+      if(!logBox||!logPending.length)return;
+      // auto-scroll only if the user is already near the bottom (don't yank if they scrolled up)
+      const nearBottom=(logBox.scrollHeight-logBox.scrollTop-logBox.clientHeight)<40;
+      logBox.insertAdjacentHTML("beforeend",logPending.join(""));logPending.length=0;
+      let over=logBox.childElementCount-LOG_CAP;   // drop oldest from the top past the cap
+      while(over-->0&&logBox.firstElementChild)logBox.removeChild(logBox.firstElementChild);
+      if(nearBottom)logBox.scrollTop=logBox.scrollHeight;
+    }
+    function scheduleLog(){if(logRafPending)return;logRafPending=true;raf(flushLog);}
+
+    // Progress driven by EVERY finished ticker (findr:log), coalesced to one DOM write per frame.
+    let progRafPending=false,progCurrent="";
+    function flushProg(){
+      progRafPending=false;
+      if(!t.data)return;
+      const seen=t.data.seen||0, total=t.data.total||0, found=(t.data.hits||[]).length;
+      const pct=total?Math.min(100,seen/total*100):0;
+      fill.style.width=pct.toFixed(1)+"%";
+      progtxt.textContent=total?`Scanned ${seen} / ${total} · Found ${found} · ${progCurrent}`:`Scanned ${seen} / … · Found ${found} · ${progCurrent}`;
+    }
+    function scheduleProg(){if(progRafPending)return;progRafPending=true;raf(flushProg);}
+
+    // Run/Stop toggle button — single element reflects t.running.
+    function syncRunBtn(){
+      if(t.running){runBtn.textContent="STOP";runBtn.classList.remove("primary");runBtn.classList.add("findr-stop");}
+      else{runBtn.textContent="RUN FINDR";runBtn.classList.remove("findr-stop");runBtn.classList.add("primary");}
+    }
+
+    async function detach(){
+      const arr=findrUnlisten[t.id];if(!arr)return;delete findrUnlisten[t.id];
+      for(const u of arr){try{const f=await u;if(typeof f==="function")f();}catch(_){}}
+    }
+
+    if(cancelBtn)cancelBtn.style.display="none";   // merged into the Run/Stop toggle
+
+    const bus=findrBus();
+    if(!hasBridge()||!bus){runBtn.disabled=true;return;}
+
+    // Re-rendering a FINDR tab whose run was left unfinished (done===false): the live
+    // event listeners are NOT reattached on a re-render, so the run is effectively
+    // interrupted (stopped, or the app was restarted mid-run). Show an interrupted
+    // summary and let the user restart, instead of leaving stale live progress.
+    if(t.data&&t.data.done===false&&t.runId){
+      t.running=false;   // no live listeners → not actually running anymore
+      const seen=t.data.seen||t.data.scanned||0;
+      if((t.data.hits||[]).length||seen){
+        prog.style.display="";
+        const pct=t.data.total?Math.min(100,seen/t.data.total*100):0;
+        fill.style.width=pct.toFixed(1)+"%";
+        progtxt.textContent=`Interrupted — scanned ${seen}${t.data.total?" / "+t.data.total:""}, found ${(t.data.hits||[]).length}. Press Run to restart.`;
+      }
+    }else if(t.running){t.running=false;}   // clear a stale spinner (e.g. after app restart)
+    syncRunBtn();
+
+    async function startRun(){
+      await detach();
+      let s=startSel.value,e2=endSel.value;
+      if(s>e2){const tmp=s;s=e2;e2=tmp;startSel.value=s;endSel.value=e2;}
+      const tf=tfSel.value;remember();
+      const run_id="findr"+Date.now()+"_"+Math.floor(Math.random()*1e6);
+      t.runId=run_id;
+      t.data={hits:[],scanned:0,total:0,seen:0,done:false};
+      progCurrent="";
+      tbody.innerHTML="";foundEl.textContent="Found 0";
+      if(logBox)logBox.innerHTML="";logPending.length=0;   // clear log on each new run
+      prog.style.display="";fill.style.width="0%";progtxt.textContent="Starting…";
+      t.running=true;syncRunBtn();renderTabs();   // toggle to STOP + start the tab-bar spinner
+      // total comes ONLY from progress; also used for final reconciliation
+      const onProg=(e)=>{const p=e.payload;if(!p||p.run_id!==t.runId)return;t.data.scanned=p.scanned;t.data.total=p.total;scheduleProg();};
+      const onHit=(e)=>{const p=e.payload;if(!p||p.run_id!==t.runId)return;t.data.hits.push({symbol:p.symbol,name:p.name,verdict:p.verdict,r_multiple:p.r_multiple,upside_pct:p.upside_pct,price:p.price,setup_quality:p.setup_quality});scheduleRender();};
+      // EVERY finished ticker: bump the live counter + refresh the log
+      const onLog=(e)=>{const p=e.payload;if(!p||p.run_id!==t.runId)return;t.data.seen=(t.data.seen||0)+1;progCurrent=p.symbol||"";logPending.push(logLineHTML(p));scheduleLog();scheduleProg();};
+      const finish=(scanned,total,cancelled,foundN)=>{t.data.done=true;t.running=false;progCurrent="";const seen=Math.max(t.data.seen||0,scanned||0);progtxt.textContent=cancelled?`Stopped — scanned ${seen}, found ${foundN}`:`Done — scanned ${seen}/${total}, found ${foundN}`;t.plain=findrPlain(t);renderRows();syncRunBtn();renderTabs();if(typeof persist==="function")persist();};
+      const onDone=async(e)=>{const p=e.payload;if(!p||p.run_id!==t.runId)return;await detach();finish(p.scanned,p.total,p.cancelled,p.found_count);};
+      findrUnlisten[t.id]=[bus.listen("findr:progress",onProg),bus.listen("findr:hit",onHit),bus.listen("findr:log",onLog),bus.listen("findr:done",onDone)];
+      status(`FINDR scanning ${s}${s===e2?"":"–"+e2}…`);
+      try{
+        const lim=parseInt((limitInput&&limitInput.value)||"",10);const limit=(Number.isFinite(lim)&&lim>0)?lim:null;
+        const res=await invoke("findr",{start:s,end:e2,timeframe:tf,runId:run_id,limit});
+        if(!t.data.done){   // done event missed — reconcile from the awaited final list
+          let fin=null;try{fin=JSON.parse(res);}catch(_){}
+          if(fin&&fin.run_id===t.runId){
+            if(Array.isArray(fin.found))t.data.hits=fin.found.map(h=>({symbol:h.symbol,name:h.name,verdict:h.verdict,r_multiple:h.r_multiple,upside_pct:h.upside_pct,price:h.price,setup_quality:h.setup_quality}));
+            await detach();finish(fin.scanned,fin.total,fin.cancelled,(fin.found||[]).length);
+          }
+        }
+      }catch(err){await detach();t.running=false;progCurrent="";syncRunBtn();renderTabs();progtxt.textContent="Error: "+String(err&&err.message||err);}
+    }
+    async function stopRun(){status("Stopping FINDR…");try{await invoke("findr_cancel",{runId:t.runId});}catch(_){}}
+    runBtn.onclick=()=>{ if(t.running) stopRun(); else startRun(); };
+  }
+
   function doScenario(){mode="tabs";Object.values(MODE_BTN).forEach(id=>{const b=$(id);if(b)b.classList.remove("primary");});newTab("scenario");status("New scenario — give it a ticker or an objective, then start.");}
   function doSaved(){setMode("saved");}
   function doLog(){setMode("log");}
-  async function doExport(){const t=cur();if(mode!=="tabs"){status("Switch to a result tab to export it.");return;}if(!t||!t.plain){status("Nothing to export in this tab.");return;}if(!hasBridge()){status("Export needs the app.");return;}const base=(t.title||"stockscanner").replace(/[^a-z0-9]+/gi,"_").toLowerCase();const stamp=new Date().toISOString().slice(0,19).replace(/[:T]/g,"-");try{const path=await invoke("save_text",{filename:`${base}_${stamp}`,contents:t.plain,location:exportLoc});status(`Saved: <b>${path}</b>`);}catch(e){status("Export failed: "+e);}}
+  async function doExport(){const t=cur();if(mode!=="tabs"){status("Switch to a result tab to export it.");return;}if(!t||!t.plain){status("Nothing to export in this tab.");return;}if(!hasBridge()){status("Export needs the app.");return;}const base=(t.title||"swingr").replace(/[^a-z0-9]+/gi,"_").toLowerCase();const stamp=new Date().toISOString().slice(0,19).replace(/[:T]/g,"-");try{const path=await invoke("save_text",{filename:`${base}_${stamp}`,contents:t.plain,location:exportLoc});status(`Saved: <b>${path}</b>`);}catch(e){status("Export failed: "+e);}}
   function toggleHelp(){helpOn=!helpOn;$("helpBtn").classList.toggle("primary",helpOn);document.body.classList.toggle("help-on",helpOn);renderView();persist();}
 
   $("scanBtn").onclick=doScan;$("btBtn").onclick=doBacktest;$("scenBtn").onclick=doScenario;$("logBtn").onclick=doLog;$("savedBtn").onclick=doSaved;$("exportBtn").onclick=doExport;$("helpBtn").onclick=toggleHelp;$("navBtn").onclick=toggleNav;
@@ -854,7 +1431,7 @@ you were testing before you see the numbers.</pre></div>`;
     "c128":['C128 (thin, readable)','"PetMe128","PetMe1282Y","C64 Pro Mono","PetMe","Menlo",monospace'],
     "pet2y":['PET double-Y (retro)','"PetMe642Y","PetMe2Y","C64 Pro Mono","Menlo",monospace'],
   };
-  const THEME_NAMES={amber:"Amber (Bloomberg)",c64:"Commodore 64",green:"Green phosphor",dark:"Dark modern",light:"Light"};
+  const THEME_NAMES={amber:"Amber (Bloomberg)",green:"Green phosphor",dark:"Dark modern",light:"Light",c64:"Commodore 64",apple2:"Apple ][",system6:"Mac System 6",winnt:"Windows NT 4",win311:"Windows 3.11",amiga:"Amiga Workbench",next:"NeXTSTEP",dos:"DOS / ANSI BBS",vista:"Windows Vista (Aero)",aqua:"Mac OS X Aqua",iphone1:"iPhone OS 1",android1:"Android 1.0"};
   let prefFont="system",prefCols="normal",prefSize="13.5",prefName="",prefWeight="400";
   function applyPrefs(){
     document.documentElement.style.setProperty("--app-font",FONTS[prefFont]?.[1]||FONTS.system[1]);

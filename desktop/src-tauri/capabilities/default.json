@@ -1,0 +1,10 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Core permissions: window + event listen/emit (FINDR live progress) for the main window.",
+  "windows": ["*"],
+  "permissions": [
+    "core:default",
+    "core:event:default"
+  ]
+}

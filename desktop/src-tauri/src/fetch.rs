@@ -76,3 +76,25 @@ pub fn market_ok(timeframe: &str) -> bool {
         _ => true,
     }
 }
+
+// ---- Async-native variants (for callers ALREADY on a tokio runtime, e.g. FINDR's async
+// command). block_fetch()'s `Runtime::new().block_on()` PANICS ("Cannot start a runtime from
+// within a runtime") when called on a runtime worker thread, so async callers MUST use these. ----
+
+/// Async scan fetch — same data as `fetch`, safe to call from an async context.
+pub async fn fetch_scan_async(ticker: &str, timeframe: &str) -> Result<Ohlcv, String> {
+    let (interval, range) = scan_interval_range(timeframe);
+    fetch_async(ticker, interval, range).await
+}
+
+/// Async `market_ok` — same rule as the sync version, safe to call from an async context.
+pub async fn market_ok_async(timeframe: &str) -> bool {
+    match fetch_scan_async("SPY", timeframe).await {
+        Ok(d) if !d.close.is_empty() => {
+            let ema200 = crate::engine::ema(&d.close, 200);
+            let i = d.close.len() - 1;
+            d.close[i] >= ema200[i]
+        }
+        _ => true,
+    }
+}

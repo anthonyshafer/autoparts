@@ -1,9 +1,10 @@
-// StockScanner — Tauri (Rust) desktop app. Self-contained: the scan/backtest commands run
+// SwingR — Tauri (Rust) desktop app. Self-contained: the scan/backtest commands run
 // the NATIVE Rust engine (engine.rs + fetch.rs), which is parity-proven against the Python
 // tool. No Python at runtime — the app is a single standalone binary.
 
 mod engine;
 mod fetch;
+mod findr;
 
 use std::path::PathBuf;
 
@@ -59,6 +60,270 @@ fn backtest_json(ticker: &str, timeframe: &str) -> Result<String, String> {
     Ok(serde_json::Value::Array(vec![obj]).to_string())
 }
 
+// ---- Fundamentals + News: read-only Yahoo Finance HTTP endpoints (no engine/fetch.rs
+// involvement — independent of the OHLCV path). ----
+
+const YAHOO_UA: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 \
+    (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+
+// Cached (cookie-jar Client, crumb) for the process lifetime — the crumb handshake is a
+// 3-step round trip, so we do it once and reuse it across `fundamentals` calls rather than
+// re-handshaking on every invocation.
+static YAHOO_AUTH: std::sync::OnceLock<tokio::sync::Mutex<Option<(reqwest::Client, String)>>> =
+    std::sync::OnceLock::new();
+
+fn yahoo_auth_cell() -> &'static tokio::sync::Mutex<Option<(reqwest::Client, String)>> {
+    YAHOO_AUTH.get_or_init(|| tokio::sync::Mutex::new(None))
+}
+
+// Step 1-3: prime the auth cookie, then read the crumb body. `fc.yahoo.com` may return a
+// non-200 status; that is expected and does not indicate failure — it still sets the cookie.
+async fn yahoo_handshake() -> Result<(reqwest::Client, String), String> {
+    let client = reqwest::Client::builder()
+        .cookie_store(true)
+        .user_agent(YAHOO_UA)
+        .build()
+        .map_err(|e| format!("client build failed: {e}"))?;
+
+    let _ = client.get("https://fc.yahoo.com").send().await;
+
+    let crumb_resp = client
+        .get("https://query1.finance.yahoo.com/v1/test/getcrumb")
+        .send()
+        .await
+        .map_err(|e| format!("getcrumb request failed: {e}"))?;
+    let crumb = crumb_resp
+        .text()
+        .await
+        .map_err(|e| format!("getcrumb body read failed: {e}"))?
+        .trim()
+        .to_string();
+    if crumb.is_empty() {
+        return Err("empty crumb from getcrumb".to_string());
+    }
+    Ok((client, crumb))
+}
+
+// Returns the cached (client, crumb), handshaking once on first call.
+async fn yahoo_auth() -> Result<(reqwest::Client, String), String> {
+    let mut guard = yahoo_auth_cell().lock().await;
+    if let Some((client, crumb)) = guard.as_ref() {
+        return Ok((client.clone(), crumb.clone()));
+    }
+    let (client, crumb) = yahoo_handshake().await?;
+    *guard = Some((client.clone(), crumb.clone()));
+    Ok((client, crumb))
+}
+
+async fn yahoo_invalidate_auth() {
+    *yahoo_auth_cell().lock().await = None;
+}
+
+fn get_f64(v: &serde_json::Value, key: &str) -> Option<f64> {
+    v.get(key).and_then(|x| x.as_f64())
+}
+
+// Step 4: v7 quote call. On an auth failure (crumb rejected), the error string is prefixed
+// with "Unauthorized" so the caller can distinguish "retry the handshake" from a hard error.
+async fn yahoo_fetch_quote(
+    client: &reqwest::Client,
+    crumb: &str,
+    ticker: &str,
+) -> Result<serde_json::Value, String> {
+    let mut url = reqwest::Url::parse("https://query1.finance.yahoo.com/v7/finance/quote")
+        .map_err(|e| format!("url parse failed: {e}"))?;
+    url.query_pairs_mut()
+        .append_pair("symbols", ticker)
+        .append_pair("crumb", crumb);
+
+    let resp = client
+        .get(url)
+        .send()
+        .await
+        .map_err(|e| format!("quote request failed: {e}"))?;
+    let status = resp.status();
+    let body: serde_json::Value = resp
+        .json()
+        .await
+        .map_err(|e| format!("quote body parse failed: {e}"))?;
+
+    if let Some(err) = body.pointer("/quoteResponse/error") {
+        if !err.is_null() {
+            return Err(format!("Unauthorized: {err}"));
+        }
+    }
+    if !status.is_success() {
+        return Err(format!("Unauthorized: HTTP {status}"));
+    }
+    body.pointer("/quoteResponse/result/0")
+        .cloned()
+        .ok_or_else(|| "no quote result for ticker".to_string())
+}
+
+fn is_auth_error(e: &str) -> bool {
+    e.starts_with("Unauthorized")
+}
+
+// Grounded, factual, advice-free one/two-sentence summary computed from the parsed fields.
+fn fundamentals_read(
+    price: Option<f64>,
+    trailing_pe: Option<f64>,
+    forward_pe: Option<f64>,
+    eps_ttm: Option<f64>,
+    low: Option<f64>,
+    high: Option<f64>,
+) -> String {
+    let mut parts: Vec<String> = Vec::new();
+
+    let unprofitable = match trailing_pe {
+        Some(pe) => pe <= 0.0,
+        None => matches!(eps_ttm, Some(e) if e <= 0.0),
+    };
+
+    if unprofitable {
+        parts.push("Unprofitable on a trailing basis (negative/no earnings).".to_string());
+    } else if let (Some(f), Some(t)) = (forward_pe, trailing_pe) {
+        if f < t {
+            parts.push(format!(
+                "Forward P/E {f:.1} below trailing {t:.1} \u{2014} market expects earnings to grow."
+            ));
+        } else {
+            parts.push(format!(
+                "Forward P/E {f:.1} at/above trailing {t:.1} \u{2014} no earnings growth priced in."
+            ));
+        }
+    }
+
+    if let (Some(p), Some(l), Some(h)) = (price, low, high) {
+        if h > l {
+            let pct = (p - l) / (h - l);
+            let pos = if pct < 0.33 {
+                "lower third"
+            } else if pct < 0.66 {
+                "middle"
+            } else {
+                "upper third"
+            };
+            parts.push(format!("Trading in the {pos} of its 52-week range."));
+        }
+    }
+
+    parts.join(" ")
+}
+
+async fn fundamentals_json(ticker: &str) -> Result<String, String> {
+    let (client, crumb) = yahoo_auth().await?;
+    let result = match yahoo_fetch_quote(&client, &crumb, ticker).await {
+        Ok(v) => v,
+        Err(e) if is_auth_error(&e) => {
+            yahoo_invalidate_auth().await;
+            let (client2, crumb2) = yahoo_auth().await?;
+            yahoo_fetch_quote(&client2, &crumb2, ticker).await?
+        }
+        Err(e) => return Err(e),
+    };
+
+    let price = get_f64(&result, "regularMarketPrice");
+    let trailing_pe = get_f64(&result, "trailingPE");
+    let forward_pe = get_f64(&result, "forwardPE");
+    let market_cap = get_f64(&result, "marketCap");
+    let price_to_book = get_f64(&result, "priceToBook");
+    let eps_ttm = get_f64(&result, "epsTrailingTwelveMonths");
+    let eps_forward = get_f64(&result, "epsForward");
+    let low = get_f64(&result, "fiftyTwoWeekLow");
+    let high = get_f64(&result, "fiftyTwoWeekHigh");
+    let read = fundamentals_read(price, trailing_pe, forward_pe, eps_ttm, low, high);
+
+    let j = serde_json::json!({
+        "ticker": ticker, "ok": true,
+        "price": price, "trailingPE": trailing_pe, "forwardPE": forward_pe,
+        "marketCap": market_cap, "priceToBook": price_to_book,
+        "epsTtm": eps_ttm, "epsForward": eps_forward,
+        "fiftyTwoWeekLow": low, "fiftyTwoWeekHigh": high,
+        "read": read,
+    });
+    Ok(j.to_string())
+}
+
+#[tauri::command]
+async fn fundamentals(ticker: String) -> Result<String, String> {
+    let t = ticker.to_uppercase();
+    match fundamentals_json(&t).await {
+        Ok(json) => Ok(json),
+        Err(e) => Ok(serde_json::json!({ "ticker": t, "ok": false, "error": e }).to_string()),
+    }
+}
+
+async fn news_json(ticker: &str) -> Result<String, String> {
+    let client = reqwest::Client::builder()
+        .user_agent(YAHOO_UA)
+        .build()
+        .map_err(|e| format!("client build failed: {e}"))?;
+    let mut url = reqwest::Url::parse("https://query1.finance.yahoo.com/v1/finance/search")
+        .map_err(|e| format!("url parse failed: {e}"))?;
+    url.query_pairs_mut()
+        .append_pair("q", ticker)
+        .append_pair("newsCount", "6")
+        .append_pair("quotesCount", "1")
+        .append_pair("enableFuzzyQuery", "false");
+
+    let resp = client
+        .get(url)
+        .send()
+        .await
+        .map_err(|e| format!("search request failed: {e}"))?;
+    if !resp.status().is_success() {
+        return Err(format!("HTTP {}", resp.status()));
+    }
+    let body: serde_json::Value = resp
+        .json()
+        .await
+        .map_err(|e| format!("search body parse failed: {e}"))?;
+
+    let sector = body
+        .pointer("/quotes/0/sectorDisp")
+        .or_else(|| body.pointer("/quotes/0/sector"))
+        .and_then(|v| v.as_str())
+        .map(str::to_string);
+    let industry = body
+        .pointer("/quotes/0/industryDisp")
+        .or_else(|| body.pointer("/quotes/0/industry"))
+        .and_then(|v| v.as_str())
+        .map(str::to_string);
+
+    let items: Vec<serde_json::Value> = body
+        .get("news")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .take(6)
+                .map(|n| {
+                    serde_json::json!({
+                        "title": n.get("title").and_then(|x| x.as_str()).unwrap_or(""),
+                        "publisher": n.get("publisher").and_then(|x| x.as_str()).unwrap_or(""),
+                        "link": n.get("link").and_then(|x| x.as_str()).unwrap_or(""),
+                        "unixTime": n.get("providerPublishTime").and_then(|x| x.as_i64()),
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+
+    let j = serde_json::json!({
+        "ticker": ticker, "ok": true, "sector": sector, "industry": industry, "items": items,
+    });
+    Ok(j.to_string())
+}
+
+#[tauri::command]
+async fn news(ticker: String) -> Result<String, String> {
+    let t = ticker.to_uppercase();
+    match news_json(&t).await {
+        Ok(json) => Ok(json),
+        Err(e) => Ok(serde_json::json!({ "ticker": t, "ok": false, "error": e }).to_string()),
+    }
+}
+
 #[tauri::command]
 fn scan(ticker: String, timeframe: String) -> Result<String, String> {
     scan_json(&ticker, &timeframe)
@@ -80,9 +345,10 @@ fn save_text(filename: String, contents: String, location: String) -> Result<Str
         p if p.starts_with('/') => PathBuf::from(p),
         _ => PathBuf::from(&home).join("Downloads"),
     };
-    // sanitize filename: strip path separators, force a .txt extension
+    // sanitize filename: strip path separators, allow .txt or .json, else default .txt
     let mut name = filename.replace(['/', '\\'], "_");
-    if !name.to_lowercase().ends_with(".txt") {
+    let lower = name.to_lowercase();
+    if !(lower.ends_with(".txt") || lower.ends_with(".json")) {
         name.push_str(".txt");
     }
     let path = dir.join(name);
@@ -147,7 +413,7 @@ fn choose_folder() -> Result<String, String> {
     }
 }
 
-// Parity harness: `stockscanner --parity <ohlcv.csv>` reads an OHLCV CSV (header:
+// Parity harness: `swingr --parity <ohlcv.csv>` reads an OHLCV CSV (header:
 // Open,High,Low,Close,Volume) and prints the LAST row's indicators as JSON, so it can be
 // diffed against the Python reference (tools/strategy.compute_indicators).
 fn run_parity(csv_path: &str) {
@@ -170,7 +436,7 @@ fn run_parity(csv_path: &str) {
     }
 }
 
-// Scan parity: `stockscanner --scan-parity <ohlcv.csv> <0|1 market_ok>` prints the full
+// Scan parity: `swingr --scan-parity <ohlcv.csv> <0|1 market_ok>` prints the full
 // scan result JSON to diff against ema_analyzer.analyze_frame.
 fn run_scan_parity(csv_path: &str, market_ok: bool) {
     let text = std::fs::read_to_string(csv_path).expect("read csv");
@@ -208,7 +474,7 @@ fn main() {
         run_scan_parity(csv, mkt);
         return;
     }
-    // Backtest parity: `stockscanner --backtest-parity <ohlcv.csv> [atr_mult] [max_hold]`
+    // Backtest parity: `swingr --backtest-parity <ohlcv.csv> [atr_mult] [max_hold]`
     if let Some(pos) = args.iter().position(|a| a == "--backtest-parity") {
         let csv = args.get(pos + 1).expect("--backtest-parity needs a csv path");
         let atr_mult = args.get(pos + 2).and_then(|s| s.parse().ok()).unwrap_or(2.0);
@@ -246,7 +512,7 @@ fn main() {
         match backtest_json(t, tf) { Ok(s) => println!("{s}"), Err(e) => { eprintln!("{e}"); std::process::exit(1); } }
         return;
     }
-    // Live fetch + scan (Rust end-to-end): `stockscanner --fetch-scan <TICKER> <weekly|daily>`
+    // Live fetch + scan (Rust end-to-end): `swingr --fetch-scan <TICKER> <weekly|daily>`
     if let Some(pos) = args.iter().position(|a| a == "--fetch-scan") {
         let ticker = args.get(pos + 1).expect("--fetch-scan needs a ticker");
         let tf = args.get(pos + 2).map(|s| s.as_str()).unwrap_or("weekly");
@@ -269,8 +535,24 @@ fn main() {
         }
         return;
     }
+    // Headless FINDR debug mode: `swingr --findr <START> <END> [limit] [weekly|daily]`
+    // Runs the real bulk-scan concurrency path and streams each ticker to stdout — use this to
+    // watch a run (or see exactly where it stalls) without the GUI. Runs on its own multi-thread
+    // runtime, mirroring the Tauri async context.
+    if let Some(pos) = args.iter().position(|a| a == "--findr") {
+        let start = args.get(pos + 1).and_then(|s| s.chars().next()).unwrap_or('A').to_ascii_uppercase();
+        let end = args.get(pos + 2).and_then(|s| s.chars().next()).unwrap_or(start).to_ascii_uppercase();
+        let limit = args.get(pos + 3).and_then(|s| s.parse::<usize>().ok());
+        let tf = args.get(pos + 4).map(|s| s.as_str()).unwrap_or("weekly");
+        let rt = tokio::runtime::Runtime::new().expect("tokio runtime");
+        rt.block_on(findr::run_headless(start, end, tf, limit));
+        return;
+    }
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![scan, backtest, save_text, open_url, choose_folder])
+        .invoke_handler(tauri::generate_handler![
+            scan, backtest, save_text, open_url, choose_folder,
+            findr::findr, findr::findr_cancel, fundamentals, news
+        ])
         .run(tauri::generate_context!())
-        .expect("error while running StockScanner");
+        .expect("error while running SwingR");
 }
